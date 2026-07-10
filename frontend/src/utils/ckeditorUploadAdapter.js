@@ -14,7 +14,7 @@ class CkeditorUploadAdapter {
         throw new Error(result.message || '이미지 업로드에 실패했습니다.')
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
       return {
         default: `${API_BASE_URL}${result.data.imageUrl}`,

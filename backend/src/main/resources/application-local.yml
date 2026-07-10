@@ -32,3 +32,9 @@ springdoc:
     tags-sorter: alpha
   api-docs:
     path: /v3/api-docs
+    
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:4173

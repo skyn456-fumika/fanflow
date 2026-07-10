@@ -15,6 +15,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.fanflow.global.config.CorsProperties;
+
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -24,6 +26,7 @@ public class SecurityConfig {
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 	private final CustomAccessDeniedHandler customAccessDeniedHandler;
+	private final CorsProperties corsProperties;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -58,14 +61,10 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
-
+		configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-
 		configuration.setAllowedHeaders(List.of("*"));
-		configuration.setExposedHeaders(List.of("Authorization"));
 		configuration.setAllowCredentials(true);
-		configuration.setMaxAge(3600L);
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);

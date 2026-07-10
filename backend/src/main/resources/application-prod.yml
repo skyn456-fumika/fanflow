@@ -1,18 +1,13 @@
 server:
-  port: ${SERVER_PORT:8096}
+  port: ${FANFLOW_SERVER_PORT:8096}
 
 spring:
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${FANFLOW_DB_URL}
+    username: ${FANFLOW_DB_USERNAME}
+    password: ${FANFLOW_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-  servlet:
-    multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
-
+    
   jpa:
     hibernate:
       ddl-auto: validate
@@ -21,12 +16,13 @@ spring:
       hibernate:
         format_sql: false
 
-logging:
-  level:
-    org.hibernate.SQL: warn
+jwt:
+  secret: ${FANFLOW_JWT_SECRET}
+  expiration: ${FANFLOW_JWT_EXPIRATION:1800000}
 
-springdoc:
-  swagger-ui:
-    enabled: false
-  api-docs:
-    enabled: false
+file:
+  upload-dir: ${FANFLOW_FILE_UPLOAD_DIR}
+
+app:
+  cors:
+    allowed-origins: ${FANFLOW_CORS_ALLOWED_ORIGINS}
