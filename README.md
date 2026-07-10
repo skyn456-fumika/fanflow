@@ -236,15 +236,37 @@ cd backend
 
 ## 주요 화면
 
-* 게시글 목록
-* 게시글 상세
-* 게시글 작성/수정
-* 로그인
-* 회원가입
-* 마이페이지
-* 관리자 회원 관리
-* 관리자 게시글 관리
-* 관리자 댓글 관리
+### 메인 페이지
+
+![메인 페이지](docs/images/main.png)
+
+### 게시글 목록
+
+![게시글 목록](docs/images/post-list.png)
+
+### 게시글 상세
+
+![게시글 상세](docs/images/post-detail.png)
+
+### 게시글 작성 / CKEditor 이미지 업로드
+
+![게시글 작성](docs/images/post-write.png)
+
+### 마이페이지
+
+![마이페이지](docs/images/mypage.png)
+
+### 관리자 회원 관리
+
+![관리자 회원 관리](docs/images/admin-users.png)
+
+### 관리자 게시글 관리
+
+![관리자 게시글 관리](docs/images/admin-posts.png)
+
+### 관리자 댓글 관리
+
+![관리자 댓글 관리](docs/images/admin-comments.png)
 
 ## API 요약
 
