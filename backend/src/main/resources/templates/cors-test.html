@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>CORS Test</title>
+</head>
+<body>
+    <button onclick="getBoards()">게시판 조회</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function getBoards() {
+            const response = await fetch('http://localhost:8096/api/boards');
+            const data = await response.json();
+
+            document.getElementById('result').textContent =
+                JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>

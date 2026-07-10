@@ -1,0 +1,813 @@
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import {
+  activateUser,
+  blindComment,
+  blindPost,
+  blockUser,
+  getAdminComments,
+  getAdminPosts,
+  getAdminUsers,
+  unblindComment,
+  unblindPost,
+} from '../../api/adminApi'
+import { getBoards } from '../../api/boardApi'
+import { getMyInfo } from '../../api/authApi'
+
+function AdminPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const alertShownRef = useRef(false)
+
+  const [me, setMe] = useState(null)
+
+  const [users, setUsers] = useState([])
+  const [pageInfo, setPageInfo] = useState(null)
+
+  const [status, setStatus] = useState('')
+  const [keyword, setKeyword] = useState('')
+  const [page, setPage] = useState(0)
+
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const size = 10
+
+  const [activeAdminTab, setActiveAdminTab] = useState('users')
+
+  const [boards, setBoards] = useState([])
+
+  const [posts, setPosts] = useState([])
+  const [postPageInfo, setPostPageInfo] = useState(null)
+  const [postBoardCode, setPostBoardCode] = useState('')
+  const [postKeyword, setPostKeyword] = useState('')
+  const [postPage, setPostPage] = useState(0)
+  const [postLoading, setPostLoading] = useState(false)
+
+  const [comments, setComments] = useState([])
+  const [commentPageInfo, setCommentPageInfo] = useState(null)
+  const [commentKeyword, setCommentKeyword] = useState('')
+  const [commentPage, setCommentPage] = useState(0)
+  const [commentLoading, setCommentLoading] = useState(false)
+
+  const requireLogin = () => {
+    if (!alertShownRef.current) {
+      alertShownRef.current = true
+      alert('로그인이 필요합니다.')
+    }
+
+    navigate('/login', {
+      replace: true,
+      state: {
+        from: location.pathname,
+      },
+    })
+  }
+
+  const requireAdmin = () => {
+    if (!alertShownRef.current) {
+      alertShownRef.current = true
+      alert('관리자만 접근할 수 있습니다.')
+    }
+
+    navigate('/posts', { replace: true })
+  }
+
+  const loadMe = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      requireLogin()
+      return false
+    }
+
+    try {
+      const result = await getMyInfo()
+
+      if (result.success) {
+        setMe(result.data)
+
+        if (result.data.role !== 'ADMIN') {
+          requireAdmin()
+          return false
+        }
+
+        return true
+      }
+
+      requireLogin()
+      return false
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return false
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return false
+      }
+
+      setErrorMessage('관리자 정보를 확인하지 못했습니다.')
+      return false
+    }
+  }
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminUsers({
+        status,
+        keyword,
+        page,
+        size,
+      })
+
+      if (result.success) {
+        setUsers(result.data.content)
+        setPageInfo(result.data)
+      } else {
+        setErrorMessage(result.message || '회원 목록을 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('회원 목록을 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadBoards = async () => {
+    try {
+      const result = await getBoards()
+
+      if (result.success) {
+        setBoards(result.data)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const loadPosts = async () => {
+    try {
+      setPostLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminPosts({
+        boardCode: postBoardCode,
+        keyword: postKeyword,
+        page: postPage,
+        size,
+      })
+
+      if (result.success) {
+        setPosts(result.data.content)
+        setPostPageInfo(result.data)
+      } else {
+        setErrorMessage(result.message || '게시글 목록을 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('게시글 목록을 불러오지 못했습니다.')
+    } finally {
+      setPostLoading(false)
+    }
+  }
+
+  const loadComments = async () => {
+    try {
+      setCommentLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminComments({
+        keyword: commentKeyword,
+        page: commentPage,
+        size,
+      })
+
+      if (result.success) {
+        setComments(result.data.content)
+        setCommentPageInfo(result.data)
+      } else {
+        setErrorMessage(result.message || '댓글 목록을 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('댓글 목록을 불러오지 못했습니다.')
+    } finally {
+      setCommentLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const init = async () => {
+      const ok = await loadMe()
+
+      if (ok) {
+        await loadBoards()
+        await loadUsers()
+      }
+    }
+
+    init()
+  }, [])
+
+  useEffect(() => {
+    if (!me || me.role !== 'ADMIN') {
+      return
+    }
+
+    if (activeAdminTab === 'users') {
+      loadUsers()
+    }
+
+    if (activeAdminTab === 'posts') {
+      loadPosts()
+    }
+
+    if (activeAdminTab === 'comments') {
+      loadComments()
+    }
+  }, [activeAdminTab, page, status, postPage, postBoardCode, commentPage])
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    setPage(0)
+    loadUsers()
+  }
+
+  const handleStatusChange = (e) => {
+    setStatus(e.target.value)
+    setPage(0)
+  }
+
+  const handleBlockUser = async (userId) => {
+    if (!window.confirm('해당 회원을 정지하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await blockUser(userId)
+
+      if (result.success) {
+        alert('회원이 정지되었습니다.')
+        await loadUsers()
+      } else {
+        alert(result.message || '회원 정지에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '회원 정지에 실패했습니다.')
+    }
+  }
+
+  const handleActivateUser = async (userId) => {
+    if (!window.confirm('해당 회원의 정지를 해제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await activateUser(userId)
+
+      if (result.success) {
+        alert('회원 정지가 해제되었습니다.')
+        await loadUsers()
+      } else {
+        alert(result.message || '회원 정지 해제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '회원 정지 해제에 실패했습니다.')
+    }
+  }
+
+  const handlePostSearch = (e) => {
+    e.preventDefault()
+    setPostPage(0)
+    loadPosts()
+  }
+
+  const handlePostBoardChange = (e) => {
+    setPostBoardCode(e.target.value)
+    setPostPage(0)
+  }
+
+  const handleBlindPost = async (postId) => {
+    if (!window.confirm('해당 게시글을 블라인드 처리하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await blindPost(postId)
+
+      if (result.success) {
+        alert('게시글이 블라인드 처리되었습니다.')
+        await loadPosts()
+      } else {
+        alert(result.message || '게시글 블라인드 처리에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '게시글 블라인드 처리에 실패했습니다.')
+    }
+  }
+
+  const handleUnblindPost = async (postId) => {
+    if (!window.confirm('해당 게시글의 블라인드를 해제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await unblindPost(postId)
+
+      if (result.success) {
+        alert('게시글 블라인드가 해제되었습니다.')
+        await loadPosts()
+      } else {
+        alert(result.message || '게시글 블라인드 해제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '게시글 블라인드 해제에 실패했습니다.')
+    }
+  }
+
+  const handleCommentSearch = (e) => {
+    e.preventDefault()
+    setCommentPage(0)
+    loadComments()
+  }
+
+  const handleBlindComment = async (commentId) => {
+    if (!window.confirm('해당 댓글을 블라인드 처리하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await blindComment(commentId)
+
+      if (result.success) {
+        alert('댓글이 블라인드 처리되었습니다.')
+        await loadComments()
+      } else {
+        alert(result.message || '댓글 블라인드 처리에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '댓글 블라인드 처리에 실패했습니다.')
+    }
+  }
+
+  const handleUnblindComment = async (commentId) => {
+    if (!window.confirm('해당 댓글의 블라인드를 해제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await unblindComment(commentId)
+
+      if (result.success) {
+        alert('댓글 블라인드가 해제되었습니다.')
+        await loadComments()
+      } else {
+        alert(result.message || '댓글 블라인드 해제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '댓글 블라인드 해제에 실패했습니다.')
+    }
+  }
+
+  if (!me) {
+    return null
+  }
+
+  return (
+    <div>
+      <div className="page-title-row">
+        <div>
+          <h1>관리자 페이지</h1>
+          <p>회원, 게시글, 댓글을 관리합니다.</p>
+        </div>
+      </div>
+
+      <div className="admin-tab-row">
+        <button
+          type="button"
+          className={activeAdminTab === 'users' ? 'active' : ''}
+          onClick={() => setActiveAdminTab('users')}
+        >
+          회원 관리
+        </button>
+
+        <button
+          type="button"
+          className={activeAdminTab === 'posts' ? 'active' : ''}
+          onClick={() => setActiveAdminTab('posts')}
+        >
+          게시글 관리
+        </button>
+
+        <button
+          type="button"
+          className={activeAdminTab === 'comments' ? 'active' : ''}
+          onClick={() => setActiveAdminTab('comments')}
+        >
+          댓글 관리
+        </button>
+      </div>
+
+      {activeAdminTab === 'users' && (
+        <div className="admin-section">
+          <h2>회원 관리</h2>
+
+          <div className="filter-box">
+            <select value={status} onChange={handleStatusChange}>
+              <option value="">전체 상태</option>
+              <option value="ACTIVE">정상</option>
+              <option value="BLOCKED">정지</option>
+              <option value="DELETED">탈퇴</option>
+            </select>
+
+            <form onSubmit={handleSearch} className="search-form">
+              <input
+                type="text"
+                value={keyword}
+                placeholder="이메일 또는 닉네임 검색"
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+
+              <button type="submit">검색</button>
+            </form>
+          </div>
+
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+          {loading ? (
+            <p>불러오는 중...</p>
+          ) : (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>이메일</th>
+                    <th>닉네임</th>
+                    <th>권한</th>
+                    <th>상태</th>
+                    <th>가입일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan="7">회원이 없습니다.</td>
+                    </tr>
+                  ) : (
+                    users.map((user) => (
+                      <tr key={user.userId}>
+                        <td>{user.userId}</td>
+                        <td>{user.email}</td>
+                        <td>{user.nickname}</td>
+                        <td>{user.role}</td>
+                        <td>{user.status}</td>
+                        <td>{user.createdAt}</td>
+                        <td>
+                          {user.status === 'ACTIVE' && user.userId !== me.userId && (
+                            <button
+                              type="button"
+                              className="admin-danger-button"
+                              onClick={() => handleBlockUser(user.userId)}
+                            >
+                              정지
+                            </button>
+                          )}
+
+                          {user.status === 'BLOCKED' && (
+                            <button
+                              type="button"
+                              className="admin-normal-button"
+                              onClick={() => handleActivateUser(user.userId)}
+                            >
+                              해제
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {pageInfo && !pageInfo.empty && (
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={pageInfo.first}
+                onClick={() => setPage((prev) => prev - 1)}
+              >
+                이전
+              </button>
+
+              <span>
+                {pageInfo.page + 1} / {pageInfo.totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={pageInfo.last}
+                onClick={() => setPage((prev) => prev + 1)}
+              >
+                다음
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {activeAdminTab === 'posts' && (
+        <div className="admin-section">
+          <h2>게시글 관리</h2>
+
+          <div className="filter-box">
+            <select value={postBoardCode} onChange={handlePostBoardChange}>
+              <option value="">전체 게시판</option>
+              {boards.map((board) => (
+                <option key={board.boardId} value={board.code}>
+                  {board.name}
+                </option>
+              ))}
+            </select>
+
+            <form onSubmit={handlePostSearch} className="search-form">
+              <input
+                type="text"
+                value={postKeyword}
+                placeholder="제목 또는 내용 검색"
+                onChange={(e) => setPostKeyword(e.target.value)}
+              />
+
+              <button type="submit">검색</button>
+            </form>
+          </div>
+
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+          {postLoading ? (
+            <p>불러오는 중...</p>
+          ) : (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>게시판</th>
+                    <th>제목</th>
+                    <th>작성자</th>
+                    <th>조회</th>
+                    <th>좋아요</th>
+                    <th>댓글</th>
+                    <th>상태</th>
+                    <th>작성일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {posts.length === 0 ? (
+                    <tr>
+                      <td colSpan="10">게시글이 없습니다.</td>
+                    </tr>
+                  ) : (
+                    posts.map((post) => {
+                      const isBlind = post.blind === true
+                      const isDeleted = post.deleted === true
+
+                      return (
+                        <tr key={post.postId}>
+                          <td>{post.postId}</td>
+                          <td>{post.boardName}</td>
+                          <td>{post.title}</td>
+                          <td>{post.writerNickname}</td>
+                          <td>{post.viewCount}</td>
+                          <td>{post.likeCount}</td>
+                          <td>{post.commentCount}</td>
+                          <td>
+                            {isDeleted ? '삭제' : isBlind ? '블라인드' : '정상'}
+                          </td>
+                          <td>{post.createdAt}</td>
+                          <td>
+                            {isDeleted ? (
+                              '-'
+                            ) : isBlind ? (
+                              <button
+                                type="button"
+                                className="admin-normal-button"
+                                onClick={() => handleUnblindPost(post.postId)}
+                              >
+                                해제
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="admin-danger-button"
+                                onClick={() => handleBlindPost(post.postId)}
+                              >
+                                블라인드
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {postPageInfo && !postPageInfo.empty && (
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={postPageInfo.first}
+                onClick={() => setPostPage((prev) => prev - 1)}
+              >
+                이전
+              </button>
+
+              <span>
+                {postPageInfo.page + 1} / {postPageInfo.totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={postPageInfo.last}
+                onClick={() => setPostPage((prev) => prev + 1)}
+              >
+                다음
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeAdminTab === 'comments' && (
+        <div className="admin-section">
+          <h2>댓글 관리</h2>
+
+          <div className="filter-box">
+            <form onSubmit={handleCommentSearch} className="search-form">
+              <input
+                type="text"
+                value={commentKeyword}
+                placeholder="댓글 내용, 닉네임, 이메일 검색"
+                onChange={(e) => setCommentKeyword(e.target.value)}
+              />
+
+              <button type="submit">검색</button>
+            </form>
+          </div>
+
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+          {commentLoading ? (
+            <p>불러오는 중...</p>
+          ) : (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>게시글 ID</th>
+                    <th>작성자</th>
+                    <th>내용</th>
+                    <th>상태</th>
+                    <th>작성일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {comments.length === 0 ? (
+                    <tr>
+                      <td colSpan="7">댓글이 없습니다.</td>
+                    </tr>
+                  ) : (
+                    comments.map((comment) => {
+                      const isBlind = comment.blind === true
+                      const isDeleted = comment.deleted === true
+
+                      return (
+                        <tr key={comment.commentId}>
+                          <td>{comment.commentId}</td>
+                          <td>{comment.postId}</td>
+                          <td>{comment.writerNickname}</td>
+                          <td>{comment.content}</td>
+                          <td>{isDeleted ? '삭제' : isBlind ? '블라인드' : '정상'}</td>
+                          <td>{comment.createdAt}</td>
+                          <td>
+                            {isDeleted ? (
+                              '-'
+                            ) : isBlind ? (
+                              <button
+                                type="button"
+                                className="admin-normal-button"
+                                onClick={() => handleUnblindComment(comment.commentId)}
+                              >
+                                해제
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="admin-danger-button"
+                                onClick={() => handleBlindComment(comment.commentId)}
+                              >
+                                블라인드
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {commentPageInfo && !commentPageInfo.empty && (
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={commentPageInfo.first}
+                onClick={() => setCommentPage((prev) => prev - 1)}
+              >
+                이전
+              </button>
+
+              <span>
+                {commentPageInfo.page + 1} / {commentPageInfo.totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={commentPageInfo.last}
+                onClick={() => setCommentPage((prev) => prev + 1)}
+              >
+                다음
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default AdminPage

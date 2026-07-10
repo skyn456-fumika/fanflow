@@ -1,0 +1,97 @@
+import axiosInstance from './axiosInstance'
+
+export const getAdminUsers = async ({
+  status,
+  keyword,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await axiosInstance.get('/api/admin/users', {
+    params: {
+      status: status || undefined,
+      keyword: keyword || undefined,
+      page,
+      size,
+    },
+  })
+
+  return response.data
+}
+
+export const blockUser = async (userId) => {
+  const response = await axiosInstance.patch(`/api/admin/users/${userId}/block`)
+
+  return response.data
+}
+
+export const activateUser = async (userId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/users/${userId}/activate`,
+  )
+
+  return response.data
+}
+
+export const getAdminPosts = async ({
+  boardCode,
+  keyword,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await axiosInstance.get('/api/admin/posts', {
+    params: {
+      boardCode: boardCode || undefined,
+      keyword: keyword || undefined,
+      page,
+      size,
+    },
+  })
+
+  return response.data
+}
+
+export const blindPost = async (postId) => {
+  const response = await axiosInstance.patch(`/api/admin/posts/${postId}/blind`)
+
+  return response.data
+}
+
+export const unblindPost = async (postId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/posts/${postId}/unblind`,
+  )
+
+  return response.data
+}
+
+export const getAdminComments = async ({
+  keyword,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await axiosInstance.get('/api/admin/comments', {
+    params: {
+      keyword: keyword || undefined,
+      page,
+      size,
+    },
+  })
+
+  return response.data
+}
+
+export const blindComment = async (commentId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/comments/${commentId}/blind`,
+  )
+
+  return response.data
+}
+
+export const unblindComment = async (commentId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/comments/${commentId}/unblind`,
+  )
+
+  return response.data
+}

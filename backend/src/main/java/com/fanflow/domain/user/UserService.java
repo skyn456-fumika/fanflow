@@ -1,0 +1,136 @@
+package com.fanflow.domain.user;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fanflow.domain.comment.CommentRepository;
+import com.fanflow.domain.comment.dto.CommentResponse;
+import com.fanflow.domain.like.PostLikeRepository;
+import com.fanflow.domain.post.PostRepository;
+import com.fanflow.domain.post.dto.PostListResponse;
+import com.fanflow.domain.user.dto.NicknameUpdateRequest;
+import com.fanflow.domain.user.dto.PasswordUpdateRequest;
+import com.fanflow.domain.user.dto.SignupRequest;
+import com.fanflow.domain.user.dto.UserDeleteRequest;
+import com.fanflow.domain.user.dto.UserResponse;
+import com.fanflow.global.exception.BusinessException;
+import com.fanflow.global.exception.ErrorCode;
+import com.fanflow.global.response.PageResponse;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class UserService {
+
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final PostRepository postRepository;
+	private final CommentRepository commentRepository;
+	private final PostLikeRepository postLikeRepository;
+
+	@Transactional
+	public UserResponse signup(SignupRequest request) {
+		if (userRepository.existsByEmail(request.getEmail())) {
+			throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+		}
+
+		if (userRepository.existsByNickname(request.getNickname())) {
+			throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+		}
+
+		User user = User.builder().email(request.getEmail()).password(passwordEncoder.encode(request.getPassword())).nickname(request.getNickname())
+				.role(UserRole.USER).status(UserStatus.ACTIVE).build();
+
+		User savedUser = userRepository.save(user);
+
+		return UserResponse.from(savedUser);
+	}
+
+	@Transactional
+	public UserResponse updateNickname(Long userId, NicknameUpdateRequest request) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		String nickname = request.getNickname().trim();
+
+		if (!user.getNickname().equals(nickname) && userRepository.existsByNickname(nickname)) {
+			throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+		}
+
+		user.changeNickname(nickname);
+
+		return UserResponse.from(user);
+	}
+
+	@Transactional
+	public void updatePassword(Long userId, PasswordUpdateRequest request) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+			throw new BusinessException(ErrorCode.PASSWORD_NOT_MATCHED);
+		}
+
+		String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
+
+		user.changePassword(encodedNewPassword);
+	}
+
+	public PageResponse<PostListResponse> getMyPosts(Long userId, int page, int size) {
+		Pageable pageable = createPageable(page, size);
+
+		Page<PostListResponse> posts = postRepository.findMyPosts(userId, pageable).map(PostListResponse::from);
+
+		return PageResponse.from(posts);
+	}
+
+	public PageResponse<CommentResponse> getMyComments(Long userId, int page, int size) {
+		Pageable pageable = createPageable(page, size);
+
+		Page<CommentResponse> comments = commentRepository.findMyComments(userId, pageable).map(CommentResponse::from);
+
+		return PageResponse.from(comments);
+	}
+
+	public PageResponse<PostListResponse> getMyLikedPosts(Long userId, int page, int size) {
+		Pageable pageable = createPageable(page, size);
+
+		Page<PostListResponse> posts = postLikeRepository.findMyPostLikes(userId, pageable)
+				.map(postLike -> PostListResponse.from(postLike.getPost()));
+
+		return PageResponse.from(posts);
+	}
+
+	@Transactional
+	public void deleteMe(Long userId, UserDeleteRequest request) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+			throw new BusinessException(ErrorCode.PASSWORD_NOT_MATCHED);
+		}
+
+		user.delete();
+	}
+
+	// 메서드 구간
+	private Pageable createPageable(int page, int size) {
+		if (page < 0) {
+			page = 0;
+		}
+
+		if (size < 1) {
+			size = 10;
+		}
+
+		if (size > 50) {
+			size = 50;
+		}
+
+		return PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+	}
+}

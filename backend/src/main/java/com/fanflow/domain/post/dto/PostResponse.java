@@ -1,0 +1,44 @@
+package com.fanflow.domain.post.dto;
+
+import java.time.LocalDateTime;
+
+import com.fanflow.domain.post.Post;
+
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+public class PostResponse {
+
+	private Long postId;
+
+	private Long boardId;
+	private String boardCode;
+	private String boardName;
+
+	private Long writerId;
+	private String writerNickname;
+
+	private String title;
+	private String content;
+
+	private int viewCount;
+	private int likeCount;
+	private int commentCount;
+
+	private boolean notice;
+	private boolean blind;
+	private boolean deleted;
+
+	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
+
+	public static PostResponse from(Post post) {
+		return PostResponse.builder().postId(post.getPostId()).boardId(post.getBoard().getBoardId()).boardCode(post.getBoard().getCode())
+				.boardName(post.getBoard().getName()).writerId(post.getWriter().getUserId()).writerNickname(post.getWriter().getNickname())
+				.title(post.getTitle()).content(post.getContent()).viewCount(post.getViewCount()).likeCount(post.getLikeCount())
+				.commentCount(post.getCommentCount()).notice(post.isNotice()).blind(post.isBlind()).deleted(post.isDeleted())
+				.createdAt(post.getCreatedAt()).updatedAt(post.getUpdatedAt()).build();
+	}
+}

@@ -1,0 +1,46 @@
+package com.fanflow.global.exception;
+
+import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+
+	// Common
+	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "잘못된 입력값입니다."), INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
+
+	// Auth / User
+	EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 사용 중인 이메일입니다."), NICKNAME_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다."),
+	LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."), USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
+	USER_NOT_ACTIVE(HttpStatus.FORBIDDEN, "이용할 수 없는 계정입니다."), PASSWORD_NOT_MATCHED(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다."),
+	CANNOT_BLOCK_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 정지할 수 없습니다."), CANNOT_ACTIVATE_DELETED_USER(HttpStatus.BAD_REQUEST, "탈퇴한 회원은 활성화할 수 없습니다."),
+
+	// Auth
+	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."), FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+
+	// Board / Post
+	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시판을 찾을 수 없습니다."), BOARD_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "비활성화된 게시판입니다."),
+	NOTICE_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "공지사항은 관리자만 작성할 수 있습니다."), POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+	POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 대한 권한이 없습니다."),
+
+	// Comment
+	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."), COMMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "댓글에 대한 권한이 없습니다."),
+
+	// Like
+	ALREADY_LIKED_POST(HttpStatus.BAD_REQUEST, "이미 좋아요를 누른 게시글입니다."), POST_LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 정보를 찾을 수 없습니다."),
+
+	// File
+	FILE_EMPTY(HttpStatus.BAD_REQUEST, "업로드할 파일이 없습니다."), INVALID_IMAGE_FILE(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드할 수 있습니다."),
+	FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
+
+	IMAGE_FILE_EMPTY(HttpStatus.BAD_REQUEST, "이미지 파일이 비어 있습니다."), IMAGE_FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "이미지 파일은 최대 5MB까지 업로드할 수 있습니다."),
+	IMAGE_EXTENSION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 이미지 확장자입니다."),
+	IMAGE_CONTENT_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 이미지 형식입니다."),
+	IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다.");
+
+	private final HttpStatus status;
+	private final String message;
+}
