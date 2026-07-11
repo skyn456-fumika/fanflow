@@ -1299,3 +1299,15 @@ textarea:focus {
 .post-content ol {
   padding-left: 24px;
 }
+
+@media (max-width: 768px) {
+  .search-input,
+  .search-form input,
+  input[type='text'],
+  input[type='search'] {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+}

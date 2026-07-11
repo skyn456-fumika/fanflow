@@ -17,6 +17,10 @@ function PostWritePage() {
   const isEditMode = !!postId
 
   const alertShownRef = useRef(false)
+  const contentRef = useRef('')
+  const editorRef = useRef(null)
+
+  const [editorReady, setEditorReady] = useState(!isEditMode)
 
   const [boards, setBoards] = useState([])
   const [form, setForm] = useState({
@@ -89,11 +93,15 @@ function PostWritePage() {
         return
       }
 
+      contentRef.current = postData.content || ''
+
       setForm({
         boardCode: postData.boardCode,
         title: postData.title,
-        content: postData.content,
+        content: postData.content || '',
       })
+
+      setEditorReady(true)
     } catch (error) {
       console.error(error)
 
@@ -125,6 +133,9 @@ function PostWritePage() {
 
     if (isEditMode) {
       loadPost()
+    } else {
+      contentRef.current = ''
+      setEditorReady(true)
     }
   }, [postId])
 
@@ -174,7 +185,11 @@ function PostWritePage() {
       return
     }
 
-    if (isEmptyContent(form.content)) {
+    const content = editorRef.current
+      ? editorRef.current.getData()
+      : contentRef.current
+
+    if (isEmptyContent(content)) {
       alert('내용을 입력해주세요.')
       return
     }
@@ -186,12 +201,12 @@ function PostWritePage() {
       const result = isEditMode
         ? await updatePost(postId, {
             title: form.title.trim(),
-            content: form.content,
+            content,
           })
         : await createPost({
             boardCode: form.boardCode,
             title: form.title.trim(),
-            content: form.content,
+            content,
           })
 
       if (result.success) {
@@ -287,44 +302,52 @@ function PostWritePage() {
           <div className="form-group">
             <label htmlFor="content">내용</label>
             <div className="ckeditor-wrap">
-              <CKEditor
-                editor={ClassicEditor}
-                data={form.content}
-                config={{
-                  extraPlugins: [CustomUploadAdapterPlugin],
-                  toolbar: [
-                    'heading',
-                    '|',
-                    'bold',
-                    'italic',
-                    'link',
-                    'bulletedList',
-                    'numberedList',
-                    '|',
-                    'imageUpload',
-                    'blockQuote',
-                    'undo',
-                    'redo',
-                  ],
-                  image: {
+              {editorReady && (
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={form.content}
+                  config={{
+                    licenseKey: 'GPL',
+                    extraPlugins: [CustomUploadAdapterPlugin],
                     toolbar: [
-                      'imageTextAlternative',
-                      'toggleImageCaption',
-                      'imageStyle:inline',
-                      'imageStyle:block',
-                      'imageStyle:side',
+                      'heading',
+                      '|',
+                      'bold',
+                      'italic',
+                      'link',
+                      'bulletedList',
+                      'numberedList',
+                      '|',
+                      'imageUpload',
+                      'blockQuote',
+                      'undo',
+                      'redo',
                     ],
-                  },
-                }}
-                onChange={(event, editor) => {
-                  const data = editor.getData()
+                    image: {
+                      toolbar: [
+                        'imageTextAlternative',
+                        'toggleImageCaption',
+                        'imageStyle:inline',
+                        'imageStyle:block',
+                        'imageStyle:side',
+                      ],
+                    },
+                  }}
+                  onReady={(editor) => {
+                    editorRef.current = editor
+                    contentRef.current = editor.getData()
 
-                  setForm((prev) => ({
-                    ...prev,
-                    content: data,
-                  }))
-                }}
-              />
+                    const editableElement = editor.ui.view.editable.element
+
+                    if (editableElement) {
+                      editableElement.setAttribute('lang', 'ko')
+                      editableElement.setAttribute('spellcheck', 'false')
+                      editableElement.setAttribute('autocapitalize', 'off')
+                      editableElement.setAttribute('autocomplete', 'off')
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
 
