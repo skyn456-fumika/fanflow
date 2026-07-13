@@ -1,5 +1,6 @@
 package com.fanflow.domain.post;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -128,4 +129,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			ORDER BY p.commentCount DESC, p.createdAt DESC
 			""")
 	List<Post> findMainCommentedPosts(Pageable pageable);
+
+	long countByDeletedFalse();
+
+	long countByDeletedFalseAndCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+	long countByDeletedFalseAndBlindTrue();
 }

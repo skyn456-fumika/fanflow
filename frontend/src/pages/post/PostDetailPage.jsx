@@ -8,6 +8,7 @@ import {
 } from '../../api/commentApi'
 import { getMyLikeStatus, likePost, unlikePost } from '../../api/likeApi'
 import { getMyInfo } from '../../api/authApi'
+import { createReport } from '../../api/reportApi'
 
 function PostDetailPage() {
   const { postId } = useParams()
@@ -85,6 +86,18 @@ function PostDetailPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) {
+      return null
+    }
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl
+    }
+
+    return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`
   }
 
   useEffect(() => {
@@ -261,6 +274,64 @@ function PostDetailPage() {
     }
   }
 
+  const handleReportPost = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      navigate('/login', { replace: true })
+      return
+    }
+
+    const reason = window.prompt('신고 사유를 입력해주세요.')
+
+    if (!reason || !reason.trim()) {
+      return
+    }
+
+    try {
+      const result = await createReport({
+        targetType: 'POST',
+        targetId: post.postId,
+        reason: reason.trim(),
+      })
+
+      alert(result.message || '신고가 접수되었습니다.')
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '신고 처리 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleReportComment = async (commentId) => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      navigate('/login', { replace: true })
+      return
+    }
+
+    const reason = window.prompt('신고 사유를 입력해주세요.')
+
+    if (!reason || !reason.trim()) {
+      return
+    }
+
+    try {
+      const result = await createReport({
+        targetType: 'COMMENT',
+        targetId: commentId,
+        reason: reason.trim(),
+      })
+
+      alert(result.message || '신고가 접수되었습니다.')
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '신고 처리 중 오류가 발생했습니다.')
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -280,11 +351,25 @@ function PostDetailPage() {
           {post.notice && <span className="notice-badge">공지</span>}
         </div>
 
-        <div className="post-meta">
-          <span>{post.writerNickname}</span>
-          <span>조회 {post.viewCount}</span>
-          <span>좋아요 {post.likeCount}</span>
-          <span>댓글 {post.commentCount}</span>
+        <div className="post-author-row">
+          <div className="profile-avatar">
+            {post.writerProfileImageUrl ? (
+              <img src={getImageUrl(post.writerProfileImageUrl)} alt="작성자 프로필" />
+            ) : (
+              <span>{post.writerNickname?.charAt(0) || '?'}</span>
+            )}
+          </div>
+
+          <div className="post-author-info">
+            <strong>{post.writerNickname}</strong>
+
+            <div className="post-meta">
+              <span>조회 {post.viewCount}</span>
+              <span>좋아요 {post.likeCount}</span>
+              <span>댓글 {post.commentCount}</span>
+              <span>{post.createdAt}</span>
+            </div>
+          </div>
         </div>
 
         <hr />
@@ -316,6 +401,10 @@ function PostDetailPage() {
               </button>
             </>
           )}
+
+          <button type="button" onClick={handleReportPost}>
+            신고
+          </button>
         </div>
       </div>
 
@@ -346,23 +435,45 @@ function PostDetailPage() {
 
               return (
                 <div key={comment.commentId} className="comment-item">
-                  <div className="comment-meta">
-                    <strong>{comment.writerNickname}</strong>
-                    <span>{comment.createdAt}</span>
+                  <div className="comment-header">
+                    <div className="comment-writer-box">
+                      <div className="profile-avatar small">
+                        {comment.writerProfileImageUrl ? (
+                          <img
+                            src={getImageUrl(comment.writerProfileImageUrl)}
+                            alt="댓글 작성자 프로필"
+                          />
+                        ) : (
+                          <span>{comment.writerNickname?.charAt(0) || '?'}</span>
+                        )}
+                      </div>
+
+                      <div className="comment-writer-info">
+                        <strong>{comment.writerNickname}</strong>
+                        <span>{comment.createdAt}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <p>{comment.content}</p>
 
-                  {isCommentWriter && (
-                    <div className="comment-action-row">
+                  <div className="comment-action-row">
+                    {isCommentWriter && (
                       <button
                         type="button"
                         onClick={() => handleDeleteComment(comment.commentId)}
                       >
                         삭제
                       </button>
-                    </div>
-                  )}
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleReportComment(comment.commentId)}
+                    >
+                      신고
+                    </button>
+                  </div>
                 </div>
               )
             })}

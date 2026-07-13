@@ -1,5 +1,6 @@
 package com.fanflow.domain.user;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	boolean existsByEmail(String email);
 
 	boolean existsByNickname(String nickname);
+
+	long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
 	@Query("""
 			SELECT u

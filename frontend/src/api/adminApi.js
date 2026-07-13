@@ -95,3 +95,35 @@ export const unblindComment = async (commentId) => {
 
   return response.data
 }
+
+export const getAdminReports = async ({
+  status,
+  targetType,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await axiosInstance.get('/api/admin/reports', {
+    params: {
+      status: status || undefined,
+      targetType: targetType || undefined,
+      page,
+      size,
+    },
+  })
+
+  return response.data
+}
+
+export const resolveReport = async (reportId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/reports/${reportId}/resolve`,
+  )
+
+  return response.data
+}
+
+export const getAdminDashboard = async () => {
+  const response = await axiosInstance.get('/api/admin/dashboard')
+
+  return response.data
+}

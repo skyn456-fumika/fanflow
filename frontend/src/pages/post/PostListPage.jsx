@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { getBoards } from '../../api/boardApi'
 import { getPosts } from '../../api/postApi'
 
+const GALLERY_BOARD_CODES = ['FAN_ART']
+
 function PostListPage() {
   const [boards, setBoards] = useState([])
   const [posts, setPosts] = useState([])
@@ -16,6 +18,7 @@ function PostListPage() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const size = 10
+  const isGalleryBoard = GALLERY_BOARD_CODES.includes(boardCode)
 
   const loadBoards = async () => {
     try {
@@ -111,17 +114,59 @@ function PostListPage() {
 
       {loading ? (
         <p>불러오는 중...</p>
+      ) : posts.length === 0 ? (
+        <div className="empty-box">게시글이 없습니다.</div>
+      ) : isGalleryBoard ? (
+        <div className="gallery-post-grid">
+          {posts.map((post) => (
+            <Link
+              to={`/posts/${post.postId}`}
+              key={post.postId}
+              className="gallery-post-card"
+            >
+              {post.thumbnailUrl ? (
+                <div className="gallery-post-thumbnail">
+                  <img src={post.thumbnailUrl} alt="" />
+                </div>
+              ) : (
+                <div className="gallery-post-thumbnail gallery-post-thumbnail-empty">
+                  이미지가 등록되지 않았습니다
+                </div>
+              )}
+
+              <div className="gallery-post-body">
+                <div className="home-post-card-top">
+                  <span className="board-badge">{post.boardName}</span>
+                  {post.notice && <span className="notice-badge">공지</span>}
+                </div>
+
+                <strong>{post.title}</strong>
+
+                <div className="post-meta">
+                  <span>{post.writerNickname}</span>
+                  <span>조회 {post.viewCount}</span>
+                  <span>좋아요 {post.likeCount}</span>
+                  <span>댓글 {post.commentCount}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       ) : (
         <div className="post-list">
-          {posts.length === 0 ? (
-            <div className="empty-box">게시글이 없습니다.</div>
-          ) : (
-            posts.map((post) => (
-              <Link
-                to={`/posts/${post.postId}`}
-                key={post.postId}
-                className="post-list-item"
-              >
+          {posts.map((post) => (
+            <Link
+              to={`/posts/${post.postId}`}
+              key={post.postId}
+              className="post-list-item"
+            >
+              {post.thumbnailUrl && (
+                <div className="post-thumbnail">
+                  <img src={post.thumbnailUrl} alt="" />
+                </div>
+              )}
+
+              <div>
                 <div className="post-main">
                   <span className="board-badge">{post.boardName}</span>
                   {post.notice && <span className="notice-badge">공지</span>}
@@ -134,9 +179,9 @@ function PostListPage() {
                   <span>좋아요 {post.likeCount}</span>
                   <span>댓글 {post.commentCount}</span>
                 </div>
-              </Link>
-            ))
-          )}
+              </div>
+            </Link>
+          ))}
         </div>
       )}
 

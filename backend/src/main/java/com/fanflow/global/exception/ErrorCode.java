@@ -39,7 +39,11 @@ public enum ErrorCode {
 	IMAGE_FILE_EMPTY(HttpStatus.BAD_REQUEST, "이미지 파일이 비어 있습니다."), IMAGE_FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "이미지 파일은 최대 5MB까지 업로드할 수 있습니다."),
 	IMAGE_EXTENSION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 이미지 확장자입니다."),
 	IMAGE_CONTENT_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 이미지 형식입니다."),
-	IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다.");
+	IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다."),
+
+	// Report
+	REPORT_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "신고 대상을 찾을 수 없습니다."), ALREADY_REPORTED(HttpStatus.BAD_REQUEST, "이미 신고한 대상입니다."),
+	REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."), REPORT_ALREADY_RESOLVED(HttpStatus.BAD_REQUEST, "이미 처리된 신고입니다.");
 
 	private final HttpStatus status;
 	private final String message;

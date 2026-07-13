@@ -25,9 +25,12 @@ public class CommentResponse {
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
+	private String writerProfileImageUrl;
+
 	public static CommentResponse from(Comment comment) {
 		return CommentResponse.builder().commentId(comment.getCommentId()).postId(comment.getPost().getPostId())
 				.writerId(comment.getWriter().getUserId()).writerNickname(comment.getWriter().getNickname()).content(comment.getContent())
-				.blind(comment.isBlind()).deleted(comment.isDeleted()).createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt()).build();
+				.blind(comment.isBlind()).deleted(comment.isDeleted()).createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt())
+				.writerProfileImageUrl(comment.getWriter().getProfileImageUrl()).build();
 	}
 }

@@ -7,11 +7,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.post.dto.PostListResponse;
 import com.fanflow.domain.user.dto.NicknameUpdateRequest;
 import com.fanflow.domain.user.dto.PasswordUpdateRequest;
+import com.fanflow.domain.user.dto.ProfileImageUpdateResponse;
 import com.fanflow.domain.user.dto.SignupRequest;
 import com.fanflow.domain.user.dto.UserDeleteRequest;
 import com.fanflow.domain.user.dto.UserResponse;
@@ -83,5 +85,13 @@ public class UserController {
 	public ApiResponse<Void> deleteMe(@CurrentUser CustomUserDetails userDetails, @Valid @RequestBody UserDeleteRequest request) {
 		userService.deleteMe(userDetails.getUserId(), request);
 		return ApiResponse.success("회원 탈퇴가 완료되었습니다.");
+	}
+
+	@PostMapping("/api/users/me/profile-image")
+	public ApiResponse<ProfileImageUpdateResponse> updateProfileImage(@CurrentUser CustomUserDetails userDetails,
+			@RequestParam("file") MultipartFile file) {
+		ProfileImageUpdateResponse response = userService.updateProfileImage(userDetails.getUserId(), file);
+
+		return ApiResponse.success("프로필 이미지가 변경되었습니다.", response);
 	}
 }

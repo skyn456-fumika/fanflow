@@ -1,5 +1,6 @@
 package com.fanflow.domain.comment;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -57,4 +58,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			  AND c.deleted = false
 			""")
 	Page<Comment> findMyComments(@Param("userId") Long userId, Pageable pageable);
+
+	long countByDeletedFalse();
+
+	long countByDeletedFalseAndCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+	long countByDeletedFalseAndBlindTrue();
 }

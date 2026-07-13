@@ -84,3 +84,16 @@ export const getMyLikedPosts = async ({ page = 0, size = 5 }) => {
 
   return response.data
 }
+
+export const updateProfileImage = async (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await axiosInstance.post('/api/users/me/profile-image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+
+  return response.data
+}

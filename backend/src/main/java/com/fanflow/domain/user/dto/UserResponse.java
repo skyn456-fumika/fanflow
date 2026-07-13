@@ -19,9 +19,10 @@ public class UserResponse {
 	private UserRole role;
 	private UserStatus status;
 	private LocalDateTime createdAt;
+	private String profileImageUrl;
 
 	public static UserResponse from(User user) {
 		return UserResponse.builder().userId(user.getUserId()).email(user.getEmail()).nickname(user.getNickname()).role(user.getRole())
-				.status(user.getStatus()).createdAt(user.getCreatedAt()).build();
+				.status(user.getStatus()).createdAt(user.getCreatedAt()).profileImageUrl(user.getProfileImageUrl()).build();
 	}
 }

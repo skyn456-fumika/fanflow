@@ -168,4 +168,82 @@ public class ImageFileService {
 		String imagePath = extractImagePath(imageUrl);
 		deletePostImageByPath(imagePath);
 	}
+
+	public String extractFirstImageUrl(String html) {
+		if (html == null || html.isBlank()) {
+			return null;
+		}
+
+		Document document = Jsoup.parse(html);
+		Element image = document.selectFirst("img[src]");
+
+		if (image == null) {
+			return null;
+		}
+
+		String src = image.attr("src");
+
+		if (src == null || src.isBlank()) {
+			return null;
+		}
+
+		return src;
+	}
+
+	public void deleteProfileImageByImageUrl(String imageUrl) {
+		if (imageUrl == null || imageUrl.isBlank()) {
+			return;
+		}
+
+		String imagePath = extractProfileImagePath(imageUrl);
+
+		if (imagePath == null) {
+			return;
+		}
+
+		deleteProfileImageByPath(imagePath);
+	}
+
+	private String extractProfileImagePath(String src) {
+		if (src == null || src.isBlank()) {
+			return null;
+		}
+
+		if (src.startsWith("/uploads/profiles/")) {
+			return src;
+		}
+
+		if (src.startsWith("http://") || src.startsWith("https://")) {
+			URI uri = URI.create(src);
+			return uri.getPath();
+		}
+
+		return null;
+	}
+
+	private void deleteProfileImageByPath(String imagePath) {
+		if (imagePath == null || !imagePath.startsWith("/uploads/profiles/")) {
+			return;
+		}
+
+		try {
+			String fileName = imagePath.substring("/uploads/profiles/".length());
+
+			if (fileName.isBlank() || fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
+				return;
+			}
+
+			Path profileUploadPath = Paths.get(uploadDir, "profiles").toAbsolutePath().normalize();
+			Path targetPath = profileUploadPath.resolve(fileName).normalize();
+
+			if (!targetPath.startsWith(profileUploadPath)) {
+				return;
+			}
+
+			Files.deleteIfExists(targetPath);
+
+		} catch (Exception e) {
+			log.warn("프로필 이미지 파일 삭제 중 오류가 발생했습니다. imagePath={}", imagePath, e);
+		}
+	}
 }

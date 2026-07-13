@@ -54,8 +54,9 @@ public class PostService {
 		boolean notice = "NOTICE".equals(board.getCode());
 
 		String sanitizedContent = htmlSanitizer.sanitize(request.getContent());
+		String thumbnailUrl = imageFileService.extractFirstImageUrl(sanitizedContent);
 
-		Post post = Post.builder().board(board).writer(writer).title(request.getTitle()).content(sanitizedContent).notice(notice).build();
+		Post post = Post.builder().board(board).writer(writer).title(request.getTitle()).content(sanitizedContent).thumbnailUrl(thumbnailUrl).build();
 
 		Post savedPost = postRepository.save(post);
 
@@ -127,6 +128,7 @@ public class PostService {
 		Set<String> beforeImagePaths = imageFileService.extractPostImagePaths(post.getContent());
 
 		String sanitizedContent = htmlSanitizer.sanitize(request.getContent());
+		String thumbnailUrl = imageFileService.extractFirstImageUrl(sanitizedContent);
 
 		Set<String> afterImagePaths = imageFileService.extractPostImagePaths(sanitizedContent);
 
@@ -134,7 +136,7 @@ public class PostService {
 
 		imageFileService.deletePostImagesByPaths(beforeImagePaths);
 
-		post.update(request.getTitle(), sanitizedContent);
+		post.update(request.getTitle(), sanitizedContent, thumbnailUrl);
 
 		imageFileService.markImagesAsUsedFromHtml(sanitizedContent);
 

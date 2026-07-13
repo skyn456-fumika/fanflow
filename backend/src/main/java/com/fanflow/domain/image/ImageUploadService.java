@@ -96,4 +96,32 @@ public class ImageUploadService {
 
 		return filename.substring(dotIndex + 1).toLowerCase();
 	}
+
+	public ImageUploadResponse uploadProfileImage(MultipartFile file) {
+		validateImage(file);
+
+		String originalFilename = file.getOriginalFilename();
+		String extension = getExtension(originalFilename);
+		String savedFileName = UUID.randomUUID() + "." + extension;
+
+		try {
+			Path uploadPath = Paths.get(uploadDir, "profiles").toAbsolutePath().normalize();
+			Files.createDirectories(uploadPath);
+
+			Path targetPath = uploadPath.resolve(savedFileName).normalize();
+
+			if (!targetPath.startsWith(uploadPath)) {
+				throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+			}
+
+			file.transferTo(targetPath.toFile());
+
+			String imageUrl = "/uploads/profiles/" + savedFileName;
+
+			return ImageUploadResponse.builder().imageUrl(imageUrl).build();
+
+		} catch (IOException e) {
+			throw new BusinessException(ErrorCode.IMAGE_UPLOAD_FAILED);
+		}
+	}
 }

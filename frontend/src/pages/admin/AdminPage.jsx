@@ -6,8 +6,11 @@ import {
   blindPost,
   blockUser,
   getAdminComments,
+  getAdminDashboard,
   getAdminPosts,
+  getAdminReports,
   getAdminUsers,
+  resolveReport,
   unblindComment,
   unblindPost,
 } from '../../api/adminApi'
@@ -33,7 +36,7 @@ function AdminPage() {
 
   const size = 10
 
-  const [activeAdminTab, setActiveAdminTab] = useState('users')
+  const [activeAdminTab, setActiveAdminTab] = useState('dashboard')
 
   const [boards, setBoards] = useState([])
 
@@ -49,6 +52,16 @@ function AdminPage() {
   const [commentKeyword, setCommentKeyword] = useState('')
   const [commentPage, setCommentPage] = useState(0)
   const [commentLoading, setCommentLoading] = useState(false)
+
+  const [reports, setReports] = useState([])
+  const [reportPageInfo, setReportPageInfo] = useState(null)
+  const [reportStatus, setReportStatus] = useState('')
+  const [reportTargetType, setReportTargetType] = useState('')
+  const [reportPage, setReportPage] = useState(0)
+  const [reportLoading, setReportLoading] = useState(false)
+
+  const [dashboard, setDashboard] = useState(null)
+  const [dashboardLoading, setDashboardLoading] = useState(false)
 
   const requireLogin = () => {
     if (!alertShownRef.current) {
@@ -241,13 +254,83 @@ function AdminPage() {
     }
   }
 
+  const loadReports = async () => {
+    try {
+      setReportLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminReports({
+        status: reportStatus,
+        targetType: reportTargetType,
+        page: reportPage,
+        size,
+      })
+
+      if (result.success) {
+        setReports(result.data.content)
+        setReportPageInfo(result.data)
+      } else {
+        setErrorMessage(result.message || '신고 목록을 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('신고 목록을 불러오지 못했습니다.')
+    } finally {
+      setReportLoading(false)
+    }
+  }
+
+  const loadDashboard = async () => {
+    try {
+      setDashboardLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminDashboard()
+
+      if (result.success) {
+        setDashboard(result.data)
+      } else {
+        setErrorMessage(result.message || '대시보드를 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('대시보드를 불러오지 못했습니다.')
+    } finally {
+      setDashboardLoading(false)
+    }
+  }
+
   useEffect(() => {
     const init = async () => {
       const ok = await loadMe()
 
       if (ok) {
         await loadBoards()
-        await loadUsers()
+        await loadDashboard()
       }
     }
 
@@ -257,6 +340,10 @@ function AdminPage() {
   useEffect(() => {
     if (!me || me.role !== 'ADMIN') {
       return
+    }
+
+    if (activeAdminTab === 'dashboard') {
+      loadDashboard()
     }
 
     if (activeAdminTab === 'users') {
@@ -270,7 +357,21 @@ function AdminPage() {
     if (activeAdminTab === 'comments') {
       loadComments()
     }
-  }, [activeAdminTab, page, status, postPage, postBoardCode, commentPage])
+
+    if (activeAdminTab === 'reports') {
+      loadReports()
+    }
+  }, [
+    activeAdminTab,
+    page,
+    status,
+    postPage,
+    postBoardCode,
+    commentPage,
+    reportPage,
+    reportStatus,
+    reportTargetType,
+  ])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -420,6 +521,36 @@ function AdminPage() {
     }
   }
 
+  const handleReportStatusChange = (e) => {
+    setReportStatus(e.target.value)
+    setReportPage(0)
+  }
+
+  const handleReportTargetTypeChange = (e) => {
+    setReportTargetType(e.target.value)
+    setReportPage(0)
+  }
+
+  const handleResolveReport = async (reportId) => {
+    if (!window.confirm('해당 신고를 처리 완료하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await resolveReport(reportId)
+
+      if (result.success) {
+        alert('신고가 처리 완료되었습니다.')
+        await loadReports()
+      } else {
+        alert(result.message || '신고 처리에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '신고 처리에 실패했습니다.')
+    }
+  }
+
   if (!me) {
     return null
   }
@@ -434,6 +565,14 @@ function AdminPage() {
       </div>
 
       <div className="admin-tab-row">
+        <button
+          type="button"
+          className={activeAdminTab === 'dashboard' ? 'active' : ''}
+          onClick={() => setActiveAdminTab('dashboard')}
+        >
+          대시보드
+        </button>
+
         <button
           type="button"
           className={activeAdminTab === 'users' ? 'active' : ''}
@@ -457,8 +596,67 @@ function AdminPage() {
         >
           댓글 관리
         </button>
+
+        <button
+          type="button"
+          className={activeAdminTab === 'reports' ? 'active' : ''}
+          onClick={() => setActiveAdminTab('reports')}
+        >
+          신고 관리
+        </button>
       </div>
 
+      {activeAdminTab === 'dashboard' && (
+        <div className="admin-section">
+          <h2>운영 대시보드</h2>
+
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+          {dashboardLoading ? (
+            <p>불러오는 중...</p>
+          ) : !dashboard ? (
+            <div className="empty-box">대시보드 데이터가 없습니다.</div>
+          ) : (
+            <div className="admin-dashboard-grid">
+              <div className="admin-dashboard-card">
+                <span>전체 회원</span>
+                <strong>{dashboard.totalUserCount}</strong>
+                <p>오늘 가입 {dashboard.todayUserCount}</p>
+              </div>
+
+              <div className="admin-dashboard-card">
+                <span>전체 게시글</span>
+                <strong>{dashboard.totalPostCount}</strong>
+                <p>오늘 작성 {dashboard.todayPostCount}</p>
+              </div>
+
+              <div className="admin-dashboard-card">
+                <span>전체 댓글</span>
+                <strong>{dashboard.totalCommentCount}</strong>
+                <p>오늘 작성 {dashboard.todayCommentCount}</p>
+              </div>
+
+              <div className="admin-dashboard-card danger">
+                <span>대기 중 신고</span>
+                <strong>{dashboard.pendingReportCount}</strong>
+                <p>처리가 필요한 신고</p>
+              </div>
+
+              <div className="admin-dashboard-card">
+                <span>블라인드 게시글</span>
+                <strong>{dashboard.blindPostCount}</strong>
+                <p>관리자에 의해 숨김 처리</p>
+              </div>
+
+              <div className="admin-dashboard-card">
+                <span>블라인드 댓글</span>
+                <strong>{dashboard.blindCommentCount}</strong>
+                <p>관리자에 의해 숨김 처리</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {activeAdminTab === 'users' && (
         <div className="admin-section">
           <h2>회원 관리</h2>
@@ -696,7 +894,6 @@ function AdminPage() {
           )}
         </div>
       )}
-
       {activeAdminTab === 'comments' && (
         <div className="admin-section">
           <h2>댓글 관리</h2>
@@ -799,6 +996,109 @@ function AdminPage() {
                 type="button"
                 disabled={commentPageInfo.last}
                 onClick={() => setCommentPage((prev) => prev + 1)}
+              >
+                다음
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {activeAdminTab === 'reports' && (
+        <div className="admin-section">
+          <h2>신고 관리</h2>
+
+          <div className="filter-box">
+            <select value={reportStatus} onChange={handleReportStatusChange}>
+              <option value="">전체 상태</option>
+              <option value="PENDING">대기</option>
+              <option value="RESOLVED">처리완료</option>
+            </select>
+
+            <select value={reportTargetType} onChange={handleReportTargetTypeChange}>
+              <option value="">전체 대상</option>
+              <option value="POST">게시글</option>
+              <option value="COMMENT">댓글</option>
+            </select>
+          </div>
+
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+          {reportLoading ? (
+            <p>불러오는 중...</p>
+          ) : (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>대상</th>
+                    <th>대상 ID</th>
+                    <th>신고자</th>
+                    <th>사유</th>
+                    <th>상태</th>
+                    <th>신고일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {reports.length === 0 ? (
+                    <tr>
+                      <td colSpan="8">신고 내역이 없습니다.</td>
+                    </tr>
+                  ) : (
+                    reports.map((report) => {
+                      const isPending = report.status === 'PENDING'
+
+                      return (
+                        <tr key={report.reportId}>
+                          <td>{report.reportId}</td>
+                          <td>{report.targetType === 'POST' ? '게시글' : '댓글'}</td>
+                          <td>{report.targetId}</td>
+                          <td>{report.reporterNickname}</td>
+                          <td>{report.reason}</td>
+                          <td>{isPending ? '대기' : '처리완료'}</td>
+                          <td>{report.createdAt}</td>
+                          <td>
+                            {isPending ? (
+                              <button
+                                type="button"
+                                className="admin-normal-button"
+                                onClick={() => handleResolveReport(report.reportId)}
+                              >
+                                처리완료
+                              </button>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {reportPageInfo && !reportPageInfo.empty && (
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={reportPageInfo.first}
+                onClick={() => setReportPage((prev) => prev - 1)}
+              >
+                이전
+              </button>
+
+              <span>
+                {reportPageInfo.page + 1} / {reportPageInfo.totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={reportPageInfo.last}
+                onClick={() => setReportPage((prev) => prev + 1)}
               >
                 다음
               </button>

@@ -62,8 +62,11 @@ public class Post extends BaseEntity {
 	@Column(nullable = false)
 	private boolean deleted;
 
+	@Column(length = 500)
+	private String thumbnailUrl;
+
 	@Builder
-	public Post(Board board, User writer, String title, String content, boolean notice) {
+	public Post(Board board, User writer, String title, String content, boolean notice, String thumbnailUrl) {
 		this.board = board;
 		this.writer = writer;
 		this.title = title;
@@ -74,11 +77,13 @@ public class Post extends BaseEntity {
 		this.notice = notice;
 		this.blind = false;
 		this.deleted = false;
+		this.thumbnailUrl = thumbnailUrl;
 	}
 
-	public void update(String title, String content) {
+	public void update(String title, String content, String thumbnailUrl) {
 		this.title = title;
 		this.content = content;
+		this.thumbnailUrl = thumbnailUrl;
 	}
 
 	public void increaseViewCount() {

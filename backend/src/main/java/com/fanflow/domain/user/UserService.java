@@ -7,14 +7,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.comment.CommentRepository;
 import com.fanflow.domain.comment.dto.CommentResponse;
+import com.fanflow.domain.image.ImageFileService;
+import com.fanflow.domain.image.ImageUploadService;
+import com.fanflow.domain.image.dto.ImageUploadResponse;
 import com.fanflow.domain.like.PostLikeRepository;
 import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.post.dto.PostListResponse;
 import com.fanflow.domain.user.dto.NicknameUpdateRequest;
 import com.fanflow.domain.user.dto.PasswordUpdateRequest;
+import com.fanflow.domain.user.dto.ProfileImageUpdateResponse;
 import com.fanflow.domain.user.dto.SignupRequest;
 import com.fanflow.domain.user.dto.UserDeleteRequest;
 import com.fanflow.domain.user.dto.UserResponse;
@@ -34,6 +39,9 @@ public class UserService {
 	private final PostRepository postRepository;
 	private final CommentRepository commentRepository;
 	private final PostLikeRepository postLikeRepository;
+
+	private final ImageUploadService imageUploadService;
+	private final ImageFileService imageFileService;
 
 	@Transactional
 	public UserResponse signup(SignupRequest request) {
@@ -132,5 +140,22 @@ public class UserService {
 		}
 
 		return PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+	}
+
+	@Transactional
+	public ProfileImageUpdateResponse updateProfileImage(Long userId, MultipartFile file) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		String oldProfileImageUrl = user.getProfileImageUrl();
+
+		ImageUploadResponse uploadResponse = imageUploadService.uploadProfileImage(file);
+
+		user.updateProfileImageUrl(uploadResponse.getImageUrl());
+
+		if (oldProfileImageUrl != null && !oldProfileImageUrl.isBlank()) {
+			imageFileService.deleteProfileImageByImageUrl(oldProfileImageUrl);
+		}
+
+		return ProfileImageUpdateResponse.builder().profileImageUrl(user.getProfileImageUrl()).build();
 	}
 }

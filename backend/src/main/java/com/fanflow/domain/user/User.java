@@ -42,6 +42,9 @@ public class User extends BaseEntity {
 	@Column(nullable = false, length = 20)
 	private UserStatus status;
 
+	@Column(length = 500)
+	private String profileImageUrl;
+
 	@Builder
 	public User(String email, String password, String nickname, UserRole role, UserStatus status) {
 		this.email = email;
@@ -77,5 +80,9 @@ public class User extends BaseEntity {
 
 	public boolean isActive() {
 		return this.status == UserStatus.ACTIVE;
+	}
+
+	public void updateProfileImageUrl(String profileImageUrl) {
+		this.profileImageUrl = profileImageUrl;
 	}
 }

@@ -2,9 +2,23 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMain } from '../../api/mainApi'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+
+const getImageUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `${API_BASE_URL}${url}`
+}
+
 function HomePostCard({ post }) {
   return (
     <Link to={`/posts/${post.postId}`} className="home-post-card">
+      {post.thumbnailUrl && (
+        <div className="home-post-thumbnail">
+          <img src={getImageUrl(post.thumbnailUrl)} alt="" />
+        </div>
+      )}
+
       <div className="home-post-card-top">
         <span className="board-badge">{post.boardName}</span>
         {post.notice && <span className="notice-badge">공지</span>}

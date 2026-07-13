@@ -8,6 +8,7 @@ import {
   getMyPosts,
   updateNickname,
   updatePassword,
+  updateProfileImage,
 } from '../../api/authApi'
 
 function MyPage() {
@@ -41,6 +42,18 @@ function MyPage() {
   const [myLikedPostsPage, setMyLikedPostsPage] = useState(0)
 
   const [activityLoading, setActivityLoading] = useState(false)
+
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) {
+      return null
+    }
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl
+    }
+
+    return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`
+  }
 
   const requireLogin = () => {
     if (!alertShownRef.current) {
@@ -307,6 +320,40 @@ function MyPage() {
     }
   }
 
+  const handleProfileImageChange = async (e) => {
+    const file = e.target.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드할 수 있습니다.')
+      e.target.value = ''
+      return
+    }
+
+    try {
+      const result = await updateProfileImage(file)
+
+      if (result.success) {
+        setUser((prev) => ({
+          ...prev,
+          profileImageUrl: result.data.profileImageUrl,
+        }))
+
+        alert('프로필 이미지가 변경되었습니다.')
+      } else {
+        alert(result.message || '프로필 이미지 변경에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '프로필 이미지 변경에 실패했습니다.')
+    } finally {
+      e.target.value = ''
+    }
+  }
+
   if (loading) {
     return <p>불러오는 중...</p>
   }
@@ -329,6 +376,31 @@ function MyPage() {
       </div>
 
       <div className="mypage-box">
+        <div className="mypage-profile-box">
+          <div className="profile-avatar large">
+            {user.profileImageUrl ? (
+              <img src={getImageUrl(user.profileImageUrl)} alt="프로필 이미지" />
+            ) : (
+              <span>{user.nickname?.charAt(0) || '?'}</span>
+            )}
+          </div>
+
+          <div>
+            <strong>{user.nickname}</strong>
+            <p>프로필 이미지를 설정해 팬 커뮤니티에서 나를 표현해보세요.</p>
+
+            <label className="secondary-button profile-upload-label">
+              이미지 변경
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleProfileImageChange}
+                hidden
+              />
+            </label>
+          </div>
+        </div>
+
         <div className="mypage-row">
           <span className="mypage-label">회원 번호</span>
           <span className="mypage-value">{user.userId}</span>
