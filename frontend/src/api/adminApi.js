@@ -33,6 +33,7 @@ export const activateUser = async (userId) => {
 }
 
 export const getAdminPosts = async ({
+  channelSlug,
   boardCode,
   keyword,
   page = 0,
@@ -40,6 +41,7 @@ export const getAdminPosts = async ({
 }) => {
   const response = await axiosInstance.get('/api/admin/posts', {
     params: {
+      channelSlug: channelSlug || undefined,
       boardCode: boardCode || undefined,
       keyword: keyword || undefined,
       page,

@@ -13,6 +13,10 @@ public class PostListResponse {
 
 	private Long postId;
 
+	private Long channelId;
+	private String channelName;
+	private String channelSlug;
+
 	private String boardCode;
 	private String boardName;
 
@@ -34,9 +38,11 @@ public class PostListResponse {
 	private String thumbnailUrl;
 
 	public static PostListResponse from(Post post) {
-		return PostListResponse.builder().postId(post.getPostId()).boardCode(post.getBoard().getCode()).boardName(post.getBoard().getName())
-				.writerId(post.getWriter().getUserId()).writerNickname(post.getWriter().getNickname()).title(post.getTitle())
-				.viewCount(post.getViewCount()).likeCount(post.getLikeCount()).commentCount(post.getCommentCount()).notice(post.isNotice())
-				.blind(post.isBlind()).deleted(post.isDeleted()).createdAt(post.getCreatedAt()).thumbnailUrl(post.getThumbnailUrl()).build();
+		return PostListResponse.builder().postId(post.getPostId()).channelId(post.getBoard().getChannel().getChannelId())
+				.channelName(post.getBoard().getChannel().getName()).channelSlug(post.getBoard().getChannel().getSlug())
+				.boardCode(post.getBoard().getCode()).boardName(post.getBoard().getName()).writerId(post.getWriter().getUserId())
+				.writerNickname(post.getWriter().getNickname()).title(post.getTitle()).viewCount(post.getViewCount()).likeCount(post.getLikeCount())
+				.commentCount(post.getCommentCount()).notice(post.isNotice()).blind(post.isBlind()).deleted(post.isDeleted())
+				.createdAt(post.getCreatedAt()).thumbnailUrl(post.getThumbnailUrl()).build();
 	}
 }

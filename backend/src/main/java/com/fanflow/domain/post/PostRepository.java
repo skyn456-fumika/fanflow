@@ -43,8 +43,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
-			WHERE (:boardCode IS NULL OR b.code = :boardCode)
+			WHERE (:channelSlug IS NULL OR c.slug = :channelSlug)
+			  AND (:boardCode IS NULL OR b.code = :boardCode)
 			  AND (
 			        :keyword IS NULL
 			        OR p.title LIKE CONCAT('%', :keyword, '%')
@@ -54,14 +56,17 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT COUNT(p)
 			FROM Post p
 			JOIN p.board b
-			WHERE (:boardCode IS NULL OR b.code = :boardCode)
+			JOIN b.channel c
+			WHERE (:channelSlug IS NULL OR c.slug = :channelSlug)
+			  AND (:boardCode IS NULL OR b.code = :boardCode)
 			  AND (
 			        :keyword IS NULL
 			        OR p.title LIKE CONCAT('%', :keyword, '%')
 			        OR p.content LIKE CONCAT('%', :keyword, '%')
 			      )
 			""")
-	Page<Post> searchAdminPosts(@Param("boardCode") String boardCode, @Param("keyword") String keyword, Pageable pageable);
+	Page<Post> searchAdminPosts(@Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode, @Param("keyword") String keyword,
+			Pageable pageable);
 
 	// main
 	@Query(value = """

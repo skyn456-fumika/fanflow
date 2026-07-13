@@ -56,6 +56,8 @@ function AdminPage() {
   const [postKeyword, setPostKeyword] = useState('')
   const [postPage, setPostPage] = useState(0)
   const [postLoading, setPostLoading] = useState(false)
+  const [postChannelSlug, setPostChannelSlug] = useState('')
+  const [postFilterBoards, setPostFilterBoards] = useState([])
 
   const [comments, setComments] = useState([])
   const [commentPageInfo, setCommentPageInfo] = useState(null)
@@ -219,6 +221,7 @@ function AdminPage() {
       setErrorMessage('')
 
       const result = await getAdminPosts({
+        channelSlug: postChannelSlug,
         boardCode: postBoardCode,
         keyword: postKeyword,
         page: postPage,
@@ -432,6 +435,7 @@ function AdminPage() {
 
       if (ok) {
         await loadBoards()
+        await loadChannels()
         await loadDashboard()
       }
     }
@@ -453,6 +457,10 @@ function AdminPage() {
     }
 
     if (activeAdminTab === 'posts') {
+      if (channels.length === 0) {
+        loadChannels()
+      }
+
       loadPosts()
     }
 
@@ -472,6 +480,7 @@ function AdminPage() {
     page,
     status,
     postPage,
+    postChannelSlug,
     postBoardCode,
     commentPage,
     reportPage,
@@ -533,12 +542,48 @@ function AdminPage() {
   const handlePostSearch = (e) => {
     e.preventDefault()
     setPostPage(0)
-    loadPosts()
+
+    if (postPage === 0) {
+      loadPosts()
+    }
   }
 
   const handlePostBoardChange = (e) => {
     setPostBoardCode(e.target.value)
     setPostPage(0)
+  }
+
+  const handlePostChannelChange = async (e) => {
+    const nextChannelSlug = e.target.value
+
+    setPostChannelSlug(nextChannelSlug)
+    setPostBoardCode('')
+    setPostPage(0)
+
+    if (!nextChannelSlug) {
+      setPostFilterBoards([])
+      return
+    }
+
+    const selectedChannel = channels.find((channel) => channel.slug === nextChannelSlug)
+
+    if (!selectedChannel) {
+      setPostFilterBoards([])
+      return
+    }
+
+    try {
+      const result = await getAdminChannelBoards(selectedChannel.channelId)
+
+      if (result.success) {
+        setPostFilterBoards(result.data.filter((board) => board.active))
+      } else {
+        setPostFilterBoards([])
+      }
+    } catch (error) {
+      console.error(error)
+      setPostFilterBoards([])
+    }
   }
 
   const handleBlindPost = async (postId) => {
@@ -1146,9 +1191,24 @@ function AdminPage() {
           <h2>게시글 관리</h2>
 
           <div className="filter-box">
-            <select value={postBoardCode} onChange={handlePostBoardChange}>
-              <option value="">전체 게시판</option>
-              {boards.map((board) => (
+            <select value={postChannelSlug} onChange={handlePostChannelChange}>
+              <option value="">전체 채널</option>
+              {channels.map((channel) => (
+                <option key={channel.channelId} value={channel.slug}>
+                  {channel.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={postBoardCode}
+              onChange={handlePostBoardChange}
+              disabled={!postChannelSlug}
+            >
+              <option value="">
+                {postChannelSlug ? '전체 게시판' : '채널을 먼저 선택하세요'}
+              </option>
+              {postFilterBoards.map((board) => (
                 <option key={board.boardId} value={board.code}>
                   {board.name}
                 </option>
@@ -1177,6 +1237,7 @@ function AdminPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
+                    <th>채널</th>
                     <th>게시판</th>
                     <th>제목</th>
                     <th>작성자</th>
@@ -1192,7 +1253,7 @@ function AdminPage() {
                 <tbody>
                   {posts.length === 0 ? (
                     <tr>
-                      <td colSpan="10">게시글이 없습니다.</td>
+                      <td colSpan="11">게시글이 없습니다.</td>
                     </tr>
                   ) : (
                     posts.map((post) => {
@@ -1202,6 +1263,7 @@ function AdminPage() {
                       return (
                         <tr key={post.postId}>
                           <td>{post.postId}</td>
+                          <td>{post.channelName || '-'}</td>
                           <td>{post.boardName}</td>
                           <td>{post.title}</td>
                           <td>{post.writerNickname}</td>

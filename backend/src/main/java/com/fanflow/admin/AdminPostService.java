@@ -26,7 +26,7 @@ public class AdminPostService {
 
 	private final NotificationService notificationService;
 
-	public PageResponse<PostListResponse> getPosts(String boardCode, String keyword, int page, int size) {
+	public PageResponse<PostListResponse> getPosts(String channelSlug, String boardCode, String keyword, int page, int size) {
 		page = Math.max(page, 0);
 
 		if (size < 1) {
@@ -39,7 +39,7 @@ public class AdminPostService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
-		Page<PostListResponse> posts = postRepository.searchAdminPosts(normalize(boardCode), normalize(keyword), pageable)
+		Page<PostListResponse> posts = postRepository.searchAdminPosts(normalize(channelSlug), normalize(boardCode), normalize(keyword), pageable)
 				.map(PostListResponse::from);
 
 		return PageResponse.from(posts);
