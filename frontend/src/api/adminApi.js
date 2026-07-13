@@ -67,12 +67,16 @@ export const unblindPost = async (postId) => {
 }
 
 export const getAdminComments = async ({
+  channelSlug,
+  boardCode,
   keyword,
   page = 0,
   size = 10,
 }) => {
   const response = await axiosInstance.get('/api/admin/comments', {
     params: {
+      channelSlug: channelSlug || undefined,
+      boardCode: boardCode || undefined,
       keyword: keyword || undefined,
       page,
       size,

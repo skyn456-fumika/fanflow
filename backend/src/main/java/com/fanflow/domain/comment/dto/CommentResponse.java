@@ -14,6 +14,16 @@ public class CommentResponse {
 	private Long commentId;
 	private Long postId;
 
+	private Long channelId;
+	private String channelName;
+	private String channelSlug;
+
+	private Long boardId;
+	private String boardCode;
+	private String boardName;
+
+	private String postTitle;
+
 	private Long writerId;
 	private String writerNickname;
 
@@ -28,7 +38,10 @@ public class CommentResponse {
 	private String writerProfileImageUrl;
 
 	public static CommentResponse from(Comment comment) {
-		return CommentResponse.builder().commentId(comment.getCommentId()).postId(comment.getPost().getPostId())
+		return CommentResponse.builder().commentId(comment.getCommentId()).channelId(comment.getPost().getBoard().getChannel().getChannelId())
+				.channelName(comment.getPost().getBoard().getChannel().getName()).channelSlug(comment.getPost().getBoard().getChannel().getSlug())
+				.boardId(comment.getPost().getBoard().getBoardId()).boardCode(comment.getPost().getBoard().getCode())
+				.boardName(comment.getPost().getBoard().getName()).postId(comment.getPost().getPostId()).postTitle(comment.getPost().getTitle())
 				.writerId(comment.getWriter().getUserId()).writerNickname(comment.getWriter().getNickname()).content(comment.getContent())
 				.blind(comment.isBlind()).deleted(comment.isDeleted()).createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt())
 				.writerProfileImageUrl(comment.getWriter().getProfileImageUrl()).build();

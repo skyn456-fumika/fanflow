@@ -64,6 +64,9 @@ function AdminPage() {
   const [commentKeyword, setCommentKeyword] = useState('')
   const [commentPage, setCommentPage] = useState(0)
   const [commentLoading, setCommentLoading] = useState(false)
+  const [commentChannelSlug, setCommentChannelSlug] = useState('')
+  const [commentBoardCode, setCommentBoardCode] = useState('')
+  const [commentFilterBoards, setCommentFilterBoards] = useState([])
 
   const [reports, setReports] = useState([])
   const [reportPageInfo, setReportPageInfo] = useState(null)
@@ -260,6 +263,8 @@ function AdminPage() {
       setErrorMessage('')
 
       const result = await getAdminComments({
+        channelSlug: commentChannelSlug,
+        boardCode: commentBoardCode,
         keyword: commentKeyword,
         page: commentPage,
         size,
@@ -465,6 +470,10 @@ function AdminPage() {
     }
 
     if (activeAdminTab === 'comments') {
+      if (channels.length === 0) {
+        loadChannels()
+      }
+
       loadComments()
     }
 
@@ -483,6 +492,8 @@ function AdminPage() {
     postChannelSlug,
     postBoardCode,
     commentPage,
+    commentChannelSlug,
+    commentBoardCode,
     reportPage,
     reportStatus,
     reportTargetType,
@@ -586,6 +597,39 @@ function AdminPage() {
     }
   }
 
+  const handleCommentChannelChange = async (e) => {
+    const nextChannelSlug = e.target.value
+
+    setCommentChannelSlug(nextChannelSlug)
+    setCommentBoardCode('')
+    setCommentPage(0)
+
+    if (!nextChannelSlug) {
+      setCommentFilterBoards([])
+      return
+    }
+
+    const selectedChannel = channels.find((channel) => channel.slug === nextChannelSlug)
+
+    if (!selectedChannel) {
+      setCommentFilterBoards([])
+      return
+    }
+
+    try {
+      const result = await getAdminChannelBoards(selectedChannel.channelId)
+
+      if (result.success) {
+        setCommentFilterBoards(result.data.filter((board) => board.active))
+      } else {
+        setCommentFilterBoards([])
+      }
+    } catch (error) {
+      console.error(error)
+      setCommentFilterBoards([])
+    }
+  }
+
   const handleBlindPost = async (postId) => {
     if (!window.confirm('해당 게시글을 블라인드 처리하시겠습니까?')) {
       return
@@ -629,7 +673,10 @@ function AdminPage() {
   const handleCommentSearch = (e) => {
     e.preventDefault()
     setCommentPage(0)
-    loadComments()
+
+    if (commentPage === 0) {
+      loadComments()
+    }
   }
 
   const handleBlindComment = async (commentId) => {
@@ -938,6 +985,11 @@ function AdminPage() {
       console.error(error)
       alert(error.response?.data?.message || '게시판 비활성화에 실패했습니다.')
     }
+  }
+
+  const handleCommentBoardChange = (e) => {
+    setCommentBoardCode(e.target.value)
+    setCommentPage(0)
   }
 
   const resetChannelForm = () => {
@@ -1334,11 +1386,35 @@ function AdminPage() {
           <h2>댓글 관리</h2>
 
           <div className="filter-box">
+            <select value={commentChannelSlug} onChange={handleCommentChannelChange}>
+              <option value="">전체 채널</option>
+              {channels.map((channel) => (
+                <option key={channel.channelId} value={channel.slug}>
+                  {channel.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={commentBoardCode}
+              onChange={handleCommentBoardChange}
+              disabled={!commentChannelSlug}
+            >
+              <option value="">
+                {commentChannelSlug ? '전체 게시판' : '채널을 먼저 선택하세요'}
+              </option>
+              {commentFilterBoards.map((board) => (
+                <option key={board.boardId} value={board.code}>
+                  {board.name}
+                </option>
+              ))}
+            </select>
+
             <form onSubmit={handleCommentSearch} className="search-form">
               <input
                 type="text"
                 value={commentKeyword}
-                placeholder="댓글 내용, 닉네임, 이메일 검색"
+                placeholder="댓글 내용, 닉네임, 이메일, 게시글 제목 검색"
                 onChange={(e) => setCommentKeyword(e.target.value)}
               />
 
@@ -1356,7 +1432,9 @@ function AdminPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>게시글 ID</th>
+                    <th>채널</th>
+                    <th>게시판</th>
+                    <th>게시글</th>
                     <th>작성자</th>
                     <th>내용</th>
                     <th>상태</th>
@@ -1368,7 +1446,7 @@ function AdminPage() {
                 <tbody>
                   {comments.length === 0 ? (
                     <tr>
-                      <td colSpan="7">댓글이 없습니다.</td>
+                      <td colSpan="8">댓글이 없습니다.</td>
                     </tr>
                   ) : (
                     comments.map((comment) => {
@@ -1378,7 +1456,16 @@ function AdminPage() {
                       return (
                         <tr key={comment.commentId}>
                           <td>{comment.commentId}</td>
-                          <td>{comment.postId}</td>
+                          <td>{comment.channelName || '-'}</td>
+                          <td>{comment.boardName || '-'}</td>
+                          <td>
+                            <Link
+                              to={`/posts/${comment.postId}`}
+                              className="admin-inline-link"
+                            >
+                              {comment.postTitle || `게시글 ${comment.postId}`}
+                            </Link>
+                          </td>
                           <td>{comment.writerNickname}</td>
                           <td>{comment.content}</td>
                           <td>{isDeleted ? '삭제' : isBlind ? '블라인드' : '정상'}</td>

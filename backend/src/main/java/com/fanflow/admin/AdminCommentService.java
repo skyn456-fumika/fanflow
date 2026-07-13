@@ -26,7 +26,7 @@ public class AdminCommentService {
 
 	private final NotificationService notificationService;
 
-	public PageResponse<CommentResponse> getComments(String keyword, int page, int size) {
+	public PageResponse<CommentResponse> getComments(String channelSlug, String boardCode, String keyword, int page, int size) {
 		page = Math.max(page, 0);
 
 		if (size < 1) {
@@ -39,7 +39,8 @@ public class AdminCommentService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
-		Page<CommentResponse> comments = commentRepository.searchAdminComments(normalize(keyword), pageable).map(CommentResponse::from);
+		Page<CommentResponse> comments = commentRepository
+				.searchAdminComments(normalize(channelSlug), normalize(boardCode), normalize(keyword), pageable).map(CommentResponse::from);
 
 		return PageResponse.from(comments);
 	}

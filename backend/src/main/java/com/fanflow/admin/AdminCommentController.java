@@ -19,9 +19,10 @@ public class AdminCommentController {
 	private final AdminCommentService adminCommentService;
 
 	@GetMapping("/api/admin/comments")
-	public ApiResponse<PageResponse<CommentResponse>> getComments(@RequestParam(required = false) String keyword,
+	public ApiResponse<PageResponse<CommentResponse>> getComments(@RequestParam(required = false) String channelSlug,
+			@RequestParam(required = false) String boardCode, @RequestParam(required = false) String keyword,
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-		PageResponse<CommentResponse> response = adminCommentService.getComments(keyword, page, size);
+		PageResponse<CommentResponse> response = adminCommentService.getComments(channelSlug, boardCode, keyword, page, size);
 
 		return ApiResponse.success("관리자 댓글 목록 조회에 성공했습니다.", response);
 	}

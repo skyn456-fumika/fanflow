@@ -27,21 +27,37 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			SELECT c
 			FROM Comment c
 			JOIN FETCH c.post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel ch
 			JOIN FETCH c.writer w
-			WHERE (:keyword IS NULL
-			    OR c.content LIKE CONCAT('%', :keyword, '%')
-			    OR w.nickname LIKE CONCAT('%', :keyword, '%')
-			    OR w.email LIKE CONCAT('%', :keyword, '%'))
+			WHERE (:channelSlug IS NULL OR ch.slug = :channelSlug)
+			  AND (:boardCode IS NULL OR b.code = :boardCode)
+			  AND (
+			        :keyword IS NULL
+			        OR c.content LIKE CONCAT('%', :keyword, '%')
+			        OR w.nickname LIKE CONCAT('%', :keyword, '%')
+			        OR w.email LIKE CONCAT('%', :keyword, '%')
+			        OR p.title LIKE CONCAT('%', :keyword, '%')
+			      )
 			""", countQuery = """
 			SELECT COUNT(c)
 			FROM Comment c
+			JOIN c.post p
+			JOIN p.board b
+			JOIN b.channel ch
 			JOIN c.writer w
-			WHERE (:keyword IS NULL
-			    OR c.content LIKE CONCAT('%', :keyword, '%')
-			    OR w.nickname LIKE CONCAT('%', :keyword, '%')
-			    OR w.email LIKE CONCAT('%', :keyword, '%'))
+			WHERE (:channelSlug IS NULL OR ch.slug = :channelSlug)
+			  AND (:boardCode IS NULL OR b.code = :boardCode)
+			  AND (
+			        :keyword IS NULL
+			        OR c.content LIKE CONCAT('%', :keyword, '%')
+			        OR w.nickname LIKE CONCAT('%', :keyword, '%')
+			        OR w.email LIKE CONCAT('%', :keyword, '%')
+			        OR p.title LIKE CONCAT('%', :keyword, '%')
+			      )
 			""")
-	Page<Comment> searchAdminComments(@Param("keyword") String keyword, Pageable pageable);
+	Page<Comment> searchAdminComments(@Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode,
+			@Param("keyword") String keyword, Pageable pageable);
 
 	@Query(value = """
 			SELECT c
