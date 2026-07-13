@@ -155,4 +155,41 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 	Page<Post> findPublicPostsByUserId(@Param("userId") Long userId, Pageable pageable);
 
 	long countByWriter_UserIdAndDeletedFalseAndBlindFalse(Long userId);
+
+	@Query(value = """
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE c.slug = :channelSlug
+			  AND c.active = true
+			  AND b.active = true
+			  AND p.deleted = false
+			  AND p.blind = false
+			  AND (:boardCode IS NULL OR b.code = :boardCode)
+			  AND (
+			        :keyword IS NULL
+			        OR p.title LIKE CONCAT('%', :keyword, '%')
+			        OR p.content LIKE CONCAT('%', :keyword, '%')
+			      )
+			""", countQuery = """
+			SELECT COUNT(p)
+			FROM Post p
+			JOIN p.board b
+			JOIN b.channel c
+			WHERE c.slug = :channelSlug
+			  AND c.active = true
+			  AND b.active = true
+			  AND p.deleted = false
+			  AND p.blind = false
+			  AND (:boardCode IS NULL OR b.code = :boardCode)
+			  AND (
+			        :keyword IS NULL
+			        OR p.title LIKE CONCAT('%', :keyword, '%')
+			        OR p.content LIKE CONCAT('%', :keyword, '%')
+			      )
+			""")
+	Page<Post> searchPostsByChannel(@Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode, @Param("keyword") String keyword,
+			Pageable pageable);
 }

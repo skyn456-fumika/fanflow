@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { getBoards } from '../../api/boardApi'
-import { getPosts } from '../../api/postApi'
+import { Link, useParams } from 'react-router-dom'
+import { getChannelPosts, getPosts } from '../../api/postApi'
+import { getChannelBoards, getBoards } from '../../api/boardApi'
 
 const GALLERY_BOARD_CODES = ['FAN_ART']
 
@@ -20,9 +20,28 @@ function PostListPage() {
   const size = 10
   const isGalleryBoard = GALLERY_BOARD_CODES.includes(boardCode)
 
+  const { channelSlug } = useParams()
+
+  const DEFAULT_CHANNEL_SLUG = 'fumika'
+  const currentChannelSlug = channelSlug || DEFAULT_CHANNEL_SLUG
+
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) {
+      return ''
+    }
+
+    if (imageUrl.startsWith('http')) {
+      return imageUrl
+    }
+
+    return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`
+  }
+
   const loadBoards = async () => {
     try {
-      const result = await getBoards()
+      const result = channelSlug
+        ? await getChannelBoards(currentChannelSlug)
+        : await getBoards()
 
       if (result.success) {
         setBoards(result.data)
@@ -38,13 +57,20 @@ function PostListPage() {
       setLoading(true)
       setErrorMessage('')
 
-      const result = await getPosts({
-        boardCode,
-        keyword,
-        page,
-        size,
-      })
-
+      const result = channelSlug
+        ? await getChannelPosts({
+            channelSlug: currentChannelSlug,
+            boardCode,
+            keyword,
+            page,
+            size,
+          })
+        : await getPosts({
+            boardCode,
+            keyword,
+            page,
+            size,
+          })
       if (result.success) {
         setPosts(result.data.content)
         setPageInfo(result.data)
@@ -58,12 +84,15 @@ function PostListPage() {
   }
 
   useEffect(() => {
+    setBoardCode('')
+    setKeyword('')
+    setPage(0)
     loadBoards()
-  }, [])
+  }, [channelSlug])
 
   useEffect(() => {
     loadPosts()
-  }, [boardCode, page])
+  }, [channelSlug, boardCode, page])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -84,7 +113,7 @@ function PostListPage() {
           <p>FanFlow 커뮤니티 게시글입니다.</p>
         </div>
 
-        <Link to="/posts/write" className="primary-button">
+        <Link to={channelSlug ? `/channels/${currentChannelSlug}/posts/write` : '/posts/write'} className="primary-button">
           글쓰기
         </Link>
       </div>
@@ -162,7 +191,7 @@ function PostListPage() {
             >
               {post.thumbnailUrl && (
                 <div className="post-thumbnail">
-                  <img src={post.thumbnailUrl} alt="" />
+                  <img src={getImageUrl(post.thumbnailUrl)} alt="" />
                 </div>
               )}
 

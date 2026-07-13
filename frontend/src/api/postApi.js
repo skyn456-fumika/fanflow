@@ -56,3 +56,37 @@ export const uploadPostImage = async (file) => {
 
   return response.data
 }
+
+export const getChannelPosts = async ({
+  channelSlug,
+  boardCode,
+  keyword,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await axiosInstance.get(`/api/channels/${channelSlug}/posts`, {
+    params: {
+      boardCode: boardCode || undefined,
+      keyword: keyword || undefined,
+      page,
+      size,
+    },
+  })
+
+  return response.data
+}
+
+export const createChannelPost = async ({
+  channelSlug,
+  boardCode,
+  title,
+  content,
+}) => {
+  const response = await axiosInstance.post(`/api/channels/${channelSlug}/posts`, {
+    boardCode,
+    title,
+    content,
+  })
+
+  return response.data
+}

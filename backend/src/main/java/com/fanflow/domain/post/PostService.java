@@ -37,11 +37,23 @@ public class PostService {
 	private final HtmlSanitizer htmlSanitizer;
 	private final ImageFileService imageFileService;
 
+	private static final String DEFAULT_CHANNEL_SLUG = "fumika";
+
 	@Transactional
 	public PostResponse createPost(Long userId, PostCreateRequest request) {
+		return createPost(DEFAULT_CHANNEL_SLUG, userId, request);
+	}
+
+	@Transactional
+	public PostResponse createPost(String channelSlug, Long userId, PostCreateRequest request) {
 		User writer = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-		Board board = boardRepository.findByCode(request.getBoardCode()).orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+		Board board = boardRepository.findByChannelSlugAndCode(channelSlug, request.getBoardCode())
+				.orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+
+		if (!board.getChannel().isActive()) {
+			throw new BusinessException(ErrorCode.BOARD_NOT_ACTIVE);
+		}
 
 		if (!board.isActive()) {
 			throw new BusinessException(ErrorCode.BOARD_NOT_ACTIVE);
@@ -56,7 +68,8 @@ public class PostService {
 		String sanitizedContent = htmlSanitizer.sanitize(request.getContent());
 		String thumbnailUrl = imageFileService.extractFirstImageUrl(sanitizedContent);
 
-		Post post = Post.builder().board(board).writer(writer).title(request.getTitle()).content(sanitizedContent).thumbnailUrl(thumbnailUrl).build();
+		Post post = Post.builder().board(board).writer(writer).title(request.getTitle()).content(sanitizedContent).notice(notice)
+				.thumbnailUrl(thumbnailUrl).build();
 
 		Post savedPost = postRepository.save(post);
 
@@ -66,6 +79,10 @@ public class PostService {
 	}
 
 	public PageResponse<PostListResponse> getPosts(String boardCode, String keyword, int page, int size) {
+		return getPostsByChannel(DEFAULT_CHANNEL_SLUG, boardCode, keyword, page, size);
+	}
+
+	public PageResponse<PostListResponse> getPostsByChannel(String channelSlug, String boardCode, String keyword, int page, int size) {
 		if (page < 0) {
 			page = 0;
 		}
@@ -80,10 +97,12 @@ public class PostService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("notice"), Sort.Order.desc("createdAt")));
 
+		String normalizedChannelSlug = normalize(channelSlug);
 		String normalizedBoardCode = normalize(boardCode);
 		String normalizedKeyword = normalize(keyword);
 
-		Page<PostListResponse> posts = postRepository.searchPosts(normalizedBoardCode, normalizedKeyword, pageable).map(PostListResponse::from);
+		Page<PostListResponse> posts = postRepository.searchPostsByChannel(normalizedChannelSlug, normalizedBoardCode, normalizedKeyword, pageable)
+				.map(PostListResponse::from);
 
 		return PageResponse.from(posts);
 	}

@@ -17,6 +17,10 @@ public class BoardService {
 	private final BoardRepository boardRepository;
 
 	public List<BoardResponse> getBoards() {
-		return boardRepository.findByActiveTrueOrderBySortOrderAsc().stream().map(BoardResponse::from).toList();
+		return boardRepository.findActiveBoardsWithChannel().stream().map(BoardResponse::from).toList();
+	}
+
+	public List<BoardResponse> getBoardsByChannel(String channelSlug) {
+		return boardRepository.findActiveBoardsByChannelSlug(channelSlug).stream().map(BoardResponse::from).toList();
 	}
 }

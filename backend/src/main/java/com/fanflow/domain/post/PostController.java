@@ -60,4 +60,21 @@ public class PostController {
 		postService.deletePost(postId, userDetails.getUserId());
 		return ApiResponse.success("게시글이 삭제되었습니다.");
 	}
+
+	@PostMapping("/api/channels/{channelSlug}/posts")
+	public ApiResponse<PostResponse> createPostByChannel(@PathVariable String channelSlug, @CurrentUser CustomUserDetails userDetails,
+			@Valid @RequestBody PostCreateRequest request) {
+		PostResponse response = postService.createPost(channelSlug, userDetails.getUserId(), request);
+
+		return ApiResponse.success("게시글이 작성되었습니다.", response);
+	}
+
+	@GetMapping("/api/channels/{channelSlug}/posts")
+	public ApiResponse<PageResponse<PostListResponse>> getPostsByChannel(@PathVariable String channelSlug,
+			@RequestParam(required = false) String boardCode, @RequestParam(required = false) String keyword,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+		PageResponse<PostListResponse> response = postService.getPostsByChannel(channelSlug, boardCode, keyword, page, size);
+
+		return ApiResponse.success("게시글 목록 조회에 성공했습니다.", response);
+	}
 }

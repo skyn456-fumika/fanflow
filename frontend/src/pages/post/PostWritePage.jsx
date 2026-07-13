@@ -2,19 +2,31 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CKEditor } from '@ckeditor/ckeditor5-react'
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
-import { getBoards } from '../../api/boardApi'
-import { createPost, getPostDetail, updatePost } from '../../api/postApi'
+import { getBoards, getChannelBoards } from '../../api/boardApi'
+import {
+  createChannelPost,
+  createPost,
+  getPostDetail,
+  updatePost,
+} from '../../api/postApi'
 import { getMyInfo } from '../../api/authApi'
 import { CustomUploadAdapterPlugin } from '../../utils/ckeditorUploadAdapter'
 
 function PostWritePage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { postId } = useParams()
+  const { channelSlug, postId } = useParams()
 
   const [me, setMe] = useState(null)
 
   const isEditMode = !!postId
+
+  const DEFAULT_CHANNEL_SLUG = 'fumika'
+  const currentChannelSlug = channelSlug || DEFAULT_CHANNEL_SLUG
+
+  const postListPath = channelSlug
+    ? `/channels/${currentChannelSlug}/posts`
+    : '/posts'
 
   const alertShownRef = useRef(false)
   const contentRef = useRef('')
@@ -48,7 +60,9 @@ function PostWritePage() {
 
   const loadBoards = async () => {
     try {
-      const result = await getBoards()
+      const result = channelSlug
+        ? await getChannelBoards(currentChannelSlug)
+        : await getBoards()
 
       if (result.success) {
         setBoards(result.data)
@@ -203,11 +217,18 @@ function PostWritePage() {
             title: form.title.trim(),
             content,
           })
-        : await createPost({
-            boardCode: form.boardCode,
-            title: form.title.trim(),
-            content,
-          })
+        : channelSlug
+          ? await createChannelPost({
+              channelSlug: currentChannelSlug,
+              boardCode: form.boardCode,
+              title: form.title.trim(),
+              content,
+            })
+          : await createPost({
+              boardCode: form.boardCode,
+              title: form.title.trim(),
+              content,
+            })
 
       if (result.success) {
         //alert(isEditMode ? '게시글이 수정되었습니다.' : '게시글이 작성되었습니다.')
@@ -254,7 +275,7 @@ function PostWritePage() {
         </div>
 
         <Link
-          to={isEditMode ? `/posts/${postId}` : '/posts'}
+          to={isEditMode ? `/posts/${postId}` : postListPath}
           className="secondary-button"
         >
           {isEditMode ? '상세' : '목록'}
@@ -363,7 +384,7 @@ function PostWritePage() {
             </button>
 
             <Link
-              to={isEditMode ? `/posts/${postId}` : '/posts'}
+              to={isEditMode ? `/posts/${postId}` : postListPath}
               className="secondary-button"
             >
               취소

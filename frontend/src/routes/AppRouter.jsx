@@ -10,6 +10,7 @@ import AdminPage from '../pages/admin/AdminPage'
 import HomePage from '../pages/home/HomePage'
 import UserProfilePage from '../pages/user/UserProfilePage'
 import NotificationPage from '../pages/notification/NotificationPage'
+import ChannelHomePage from '../pages/channel/ChannelHomePage'
 
 function AppRouter() {
   return (
@@ -20,6 +21,9 @@ function AppRouter() {
         <Route path="/posts/write" element={<PostWritePage />} />
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/posts/:postId/edit" element={<PostWritePage />} />
+        <Route path="/channels/:channelSlug" element={<ChannelHomePage />} />
+        <Route path="/channels/:channelSlug/posts" element={<PostListPage />} />
+        <Route path="/channels/:channelSlug/posts/write" element={<PostWritePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/mypage" element={<MyPage />} />
