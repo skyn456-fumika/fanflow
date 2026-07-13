@@ -107,7 +107,7 @@ function Header() {
         </Link>
 
         <nav className="nav">
-          <Link to="/posts">게시글</Link>
+          <Link to="/channels">채널</Link>
 
           {isLoggedIn ? (
             <>

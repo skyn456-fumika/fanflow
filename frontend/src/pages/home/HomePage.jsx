@@ -113,12 +113,12 @@ function HomePage() {
           </p>
 
           <div className="home-hero-actions">
-            <Link to="/posts" className="primary-button">
-              게시글 보러가기
+            <Link to="/channels" className="primary-button">
+              채널 둘러보기
             </Link>
 
-            <Link to="/posts/write" className="secondary-button">
-              글쓰기
+            <Link to="/channels/fumika" className="secondary-button">
+              기본 채널
             </Link>
           </div>
         </div>

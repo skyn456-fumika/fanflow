@@ -23,6 +23,7 @@ public enum ErrorCode {
 
 	// channel
 	CHANNEL_NOT_FOUND(HttpStatus.NOT_FOUND, "채널을 찾을 수 없습니다."), CHANNEL_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "비활성화된 채널입니다."),
+	CHANNEL_SLUG_DUPLICATED(HttpStatus.BAD_REQUEST, "이미 사용 중인 채널 주소입니다."),
 
 	// Board / Post
 	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시판을 찾을 수 없습니다."), BOARD_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "비활성화된 게시판입니다."),

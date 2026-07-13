@@ -12,4 +12,6 @@ public interface ChannelRepository extends JpaRepository<Channel, Long> {
 	boolean existsBySlug(String slug);
 
 	List<Channel> findByActiveTrueOrderByNameAsc();
+
+	List<Channel> findAllByOrderByCreatedAtDesc();
 }

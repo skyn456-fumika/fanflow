@@ -11,6 +11,7 @@ import HomePage from '../pages/home/HomePage'
 import UserProfilePage from '../pages/user/UserProfilePage'
 import NotificationPage from '../pages/notification/NotificationPage'
 import ChannelHomePage from '../pages/channel/ChannelHomePage'
+import ChannelListPage from '../pages/channel/ChannelListPage'
 
 function AppRouter() {
   return (
@@ -21,6 +22,7 @@ function AppRouter() {
         <Route path="/posts/write" element={<PostWritePage />} />
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/posts/:postId/edit" element={<PostWritePage />} />
+        <Route path="/channels" element={<ChannelListPage />} />
         <Route path="/channels/:channelSlug" element={<ChannelHomePage />} />
         <Route path="/channels/:channelSlug/posts" element={<PostListPage />} />
         <Route path="/channels/:channelSlug/posts/write" element={<PostWritePage />} />

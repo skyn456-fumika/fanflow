@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
+  activateAdminChannel,
   activateUser,
   blindComment,
   blindPost,
   blockUser,
+  createAdminChannel,
+  deactivateAdminChannel,
+  getAdminChannels,
   getAdminComments,
   getAdminDashboard,
   getAdminPosts,
@@ -13,6 +17,7 @@ import {
   resolveReport,
   unblindComment,
   unblindPost,
+  updateAdminChannel,
 } from '../../api/adminApi'
 import { getBoards } from '../../api/boardApi'
 import { getMyInfo } from '../../api/authApi'
@@ -62,6 +67,18 @@ function AdminPage() {
 
   const [dashboard, setDashboard] = useState(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
+
+  const [channels, setChannels] = useState([])
+  const [channelLoading, setChannelLoading] = useState(false)
+  const [editingChannelId, setEditingChannelId] = useState(null)
+
+  const [channelForm, setChannelForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    profileImageUrl: '',
+    bannerImageUrl: '',
+  })
 
   const requireLogin = () => {
     if (!alertShownRef.current) {
@@ -324,6 +341,38 @@ function AdminPage() {
     }
   }
 
+  const loadChannels = async () => {
+    try {
+      setChannelLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminChannels()
+
+      if (result.success) {
+        setChannels(result.data)
+      } else {
+        setErrorMessage(result.message || '채널 목록을 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('채널 목록을 불러오지 못했습니다.')
+    } finally {
+      setChannelLoading(false)
+    }
+  }
+
   useEffect(() => {
     const init = async () => {
       const ok = await loadMe()
@@ -360,6 +409,10 @@ function AdminPage() {
 
     if (activeAdminTab === 'reports') {
       loadReports()
+    }
+
+    if (activeAdminTab === 'channels') {
+      loadChannels()
     }
   }, [
     activeAdminTab,
@@ -551,6 +604,121 @@ function AdminPage() {
     }
   }
 
+  const handleChannelFormChange = (e) => {
+    const { name, value } = e.target
+
+    setChannelForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleSubmitChannel = async (e) => {
+    e.preventDefault()
+
+    if (!channelForm.name.trim()) {
+      alert('채널명을 입력해주세요.')
+      return
+    }
+
+    if (!channelForm.slug.trim()) {
+      alert('채널 주소를 입력해주세요.')
+      return
+    }
+
+    if (!/^[a-z0-9-]+$/.test(channelForm.slug.trim())) {
+      alert('채널 주소는 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.')
+      return
+    }
+
+    const payload = {
+      name: channelForm.name.trim(),
+      slug: channelForm.slug.trim().toLowerCase(),
+      description: channelForm.description.trim(),
+      profileImageUrl: channelForm.profileImageUrl.trim(),
+      bannerImageUrl: channelForm.bannerImageUrl.trim(),
+    }
+
+    try {
+      const result = editingChannelId
+        ? await updateAdminChannel(editingChannelId, payload)
+        : await createAdminChannel(payload)
+
+      if (result.success) {
+        alert(editingChannelId ? '채널이 수정되었습니다.' : '채널이 생성되었습니다.')
+        resetChannelForm()
+        await loadChannels()
+      } else {
+        alert(result.message || '채널 저장에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '채널 저장에 실패했습니다.')
+    }
+  }
+
+  const handleEditChannel = (channel) => {
+    setEditingChannelId(channel.channelId)
+    setChannelForm({
+      name: channel.name || '',
+      slug: channel.slug || '',
+      description: channel.description || '',
+      profileImageUrl: channel.profileImageUrl || '',
+      bannerImageUrl: channel.bannerImageUrl || '',
+    })
+  }
+
+  const handleActivateChannel = async (channelId) => {
+    if (!window.confirm('해당 채널을 활성화하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await activateAdminChannel(channelId)
+
+      if (result.success) {
+        alert('채널이 활성화되었습니다.')
+        await loadChannels()
+      } else {
+        alert(result.message || '채널 활성화에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '채널 활성화에 실패했습니다.')
+    }
+  }
+
+  const handleDeactivateChannel = async (channelId) => {
+    if (!window.confirm('해당 채널을 비활성화하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await deactivateAdminChannel(channelId)
+
+      if (result.success) {
+        alert('채널이 비활성화되었습니다.')
+        await loadChannels()
+      } else {
+        alert(result.message || '채널 비활성화에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '채널 비활성화에 실패했습니다.')
+    }
+  }
+
+  const resetChannelForm = () => {
+    setEditingChannelId(null)
+    setChannelForm({
+      name: '',
+      slug: '',
+      description: '',
+      profileImageUrl: '',
+      bannerImageUrl: '',
+    })
+  }
+
   if (!me) {
     return null
   }
@@ -603,6 +771,14 @@ function AdminPage() {
           onClick={() => setActiveAdminTab('reports')}
         >
           신고 관리
+        </button>
+
+        <button
+          type="button"
+          className={activeAdminTab === 'channels' ? 'active' : ''}
+          onClick={() => setActiveAdminTab('channels')}
+        >
+          채널 관리
         </button>
       </div>
 
@@ -1125,6 +1301,173 @@ function AdminPage() {
               >
                 다음
               </button>
+            </div>
+          )}
+        </div>
+      )}
+      {activeAdminTab === 'channels' && (
+        <div className="admin-section">
+          <h2>채널 관리</h2>
+
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+          <form onSubmit={handleSubmitChannel} className="admin-channel-form">
+            <div className="admin-channel-form-grid">
+              <div className="form-group">
+                <label htmlFor="channelName">채널명</label>
+                <input
+                  id="channelName"
+                  name="name"
+                  type="text"
+                  value={channelForm.name}
+                  onChange={handleChannelFormChange}
+                  placeholder="예: 후미카"
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="channelSlug">채널 주소</label>
+                <input
+                  id="channelSlug"
+                  name="slug"
+                  type="text"
+                  value={channelForm.slug}
+                  onChange={handleChannelFormChange}
+                  placeholder="예: fumika"
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="form-group admin-channel-form-wide">
+                <label htmlFor="channelDescription">설명</label>
+                <input
+                  id="channelDescription"
+                  name="description"
+                  type="text"
+                  value={channelForm.description}
+                  onChange={handleChannelFormChange}
+                  placeholder="채널 설명"
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="form-group admin-channel-form-wide">
+                <label htmlFor="channelProfileImageUrl">프로필 이미지 URL</label>
+                <input
+                  id="channelProfileImageUrl"
+                  name="profileImageUrl"
+                  type="text"
+                  value={channelForm.profileImageUrl}
+                  onChange={handleChannelFormChange}
+                  placeholder="/uploads/... 또는 https://..."
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="form-group admin-channel-form-wide">
+                <label htmlFor="channelBannerImageUrl">배너 이미지 URL</label>
+                <input
+                  id="channelBannerImageUrl"
+                  name="bannerImageUrl"
+                  type="text"
+                  value={channelForm.bannerImageUrl}
+                  onChange={handleChannelFormChange}
+                  placeholder="/uploads/... 또는 https://..."
+                  maxLength={500}
+                />
+              </div>
+            </div>
+
+            <div className="write-action-row">
+              <button type="submit" className="primary-button">
+                {editingChannelId ? '채널 수정' : '채널 생성'}
+              </button>
+
+              {editingChannelId && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={resetChannelForm}
+                >
+                  취소
+                </button>
+              )}
+            </div>
+          </form>
+
+          {channelLoading ? (
+            <p>불러오는 중...</p>
+          ) : (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>채널명</th>
+                    <th>주소</th>
+                    <th>설명</th>
+                    <th>상태</th>
+                    <th>생성일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {channels.length === 0 ? (
+                    <tr>
+                      <td colSpan="7">채널이 없습니다.</td>
+                    </tr>
+                  ) : (
+                    channels.map((channel) => (
+                      <tr key={channel.channelId}>
+                        <td>{channel.channelId}</td>
+                        <td>{channel.name}</td>
+                        <td>{channel.slug}</td>
+                        <td>{channel.description || '-'}</td>
+                        <td>{channel.active ? '활성' : '비활성'}</td>
+                        <td>{channel.createdAt}</td>
+                        <td>
+                          <div className="admin-action-row">
+                            <button
+                              type="button"
+                              className="admin-normal-button"
+                              onClick={() => handleEditChannel(channel)}
+                            >
+                              수정
+                            </button>
+
+                            {channel.active ? (
+                              <button
+                                type="button"
+                                className="admin-danger-button"
+                                onClick={() => handleDeactivateChannel(channel.channelId)}
+                              >
+                                비활성화
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="admin-normal-button"
+                                onClick={() => handleActivateChannel(channel.channelId)}
+                              >
+                                활성화
+                              </button>
+                            )}
+
+                            <Link
+                              to={`/channels/${channel.slug}`}
+                              className="admin-inline-link"
+                            >
+                              보기
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

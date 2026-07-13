@@ -127,3 +127,64 @@ export const getAdminDashboard = async () => {
 
   return response.data
 }
+
+export const getAdminChannels = async () => {
+  const response = await axiosInstance.get('/api/admin/channels')
+
+  return response.data
+}
+
+export const createAdminChannel = async ({
+  name,
+  slug,
+  description,
+  profileImageUrl,
+  bannerImageUrl,
+}) => {
+  const response = await axiosInstance.post('/api/admin/channels', {
+    name,
+    slug,
+    description,
+    profileImageUrl,
+    bannerImageUrl,
+  })
+
+  return response.data
+}
+
+export const updateAdminChannel = async (
+  channelId,
+  {
+    name,
+    slug,
+    description,
+    profileImageUrl,
+    bannerImageUrl,
+  },
+) => {
+  const response = await axiosInstance.put(`/api/admin/channels/${channelId}`, {
+    name,
+    slug,
+    description,
+    profileImageUrl,
+    bannerImageUrl,
+  })
+
+  return response.data
+}
+
+export const activateAdminChannel = async (channelId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/channels/${channelId}/activate`,
+  )
+
+  return response.data
+}
+
+export const deactivateAdminChannel = async (channelId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/channels/${channelId}/deactivate`,
+  )
+
+  return response.data
+}

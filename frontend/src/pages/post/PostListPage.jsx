@@ -1,17 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getChannelPosts, getPosts } from '../../api/postApi'
 import { getChannelBoards, getBoards } from '../../api/boardApi'
 
 const GALLERY_BOARD_CODES = ['FAN_ART']
 
 function PostListPage() {
+  const { channelSlug } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const DEFAULT_CHANNEL_SLUG = 'fumika'
+  const currentChannelSlug = channelSlug || DEFAULT_CHANNEL_SLUG
+
   const [boards, setBoards] = useState([])
   const [posts, setPosts] = useState([])
   const [pageInfo, setPageInfo] = useState(null)
 
-  const [boardCode, setBoardCode] = useState('')
-  const [keyword, setKeyword] = useState('')
+  const [boardCode, setBoardCode] = useState(searchParams.get('boardCode') || '')
+  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '')
   const [page, setPage] = useState(0)
 
   const [loading, setLoading] = useState(false)
@@ -19,11 +25,6 @@ function PostListPage() {
 
   const size = 10
   const isGalleryBoard = GALLERY_BOARD_CODES.includes(boardCode)
-
-  const { channelSlug } = useParams()
-
-  const DEFAULT_CHANNEL_SLUG = 'fumika'
-  const currentChannelSlug = channelSlug || DEFAULT_CHANNEL_SLUG
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) {
@@ -83,12 +84,32 @@ function PostListPage() {
     }
   }
 
+  const updateSearchParams = ({ nextBoardCode, nextKeyword }) => {
+    const params = {}
+
+    if (nextBoardCode) {
+      params.boardCode = nextBoardCode
+    }
+
+    if (nextKeyword) {
+      params.keyword = nextKeyword
+    }
+
+    setSearchParams(params)
+  }
+
   useEffect(() => {
-    setBoardCode('')
-    setKeyword('')
-    setPage(0)
     loadBoards()
   }, [channelSlug])
+
+  useEffect(() => {
+    const queryBoardCode = searchParams.get('boardCode') || ''
+    const queryKeyword = searchParams.get('keyword') || ''
+
+    setBoardCode(queryBoardCode)
+    setKeyword(queryKeyword)
+    setPage(0)
+  }, [searchParams])
 
   useEffect(() => {
     loadPosts()
@@ -96,13 +117,29 @@ function PostListPage() {
 
   const handleSearch = (e) => {
     e.preventDefault()
+
+    const nextKeyword = keyword.trim()
+
     setPage(0)
+
+    updateSearchParams({
+      nextBoardCode: boardCode,
+      nextKeyword,
+    })
+
     loadPosts()
   }
 
   const handleBoardChange = (e) => {
-    setBoardCode(e.target.value)
+    const nextBoardCode = e.target.value
+
+    setBoardCode(nextBoardCode)
     setPage(0)
+
+    updateSearchParams({
+      nextBoardCode,
+      nextKeyword: keyword.trim(),
+    })
   }
 
   return (

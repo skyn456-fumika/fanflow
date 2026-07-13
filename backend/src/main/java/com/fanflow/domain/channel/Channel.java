@@ -51,6 +51,14 @@ public class Channel extends BaseEntity {
 		this.active = active;
 	}
 
+	public void update(String name, String slug, String description, String profileImageUrl, String bannerImageUrl) {
+		this.name = name;
+		this.slug = slug;
+		this.description = description;
+		this.profileImageUrl = profileImageUrl;
+		this.bannerImageUrl = bannerImageUrl;
+	}
+
 	public void activate() {
 		this.active = true;
 	}
