@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.board.BoardService;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 public class ChannelService {
 
 	private final ChannelRepository channelRepository;
+
+	private final BoardService boardService;
 
 	public List<ChannelResponse> getChannels() {
 		return channelRepository.findByActiveTrueOrderByNameAsc().stream().map(ChannelResponse::from).toList();
@@ -51,6 +54,8 @@ public class ChannelService {
 				.active(true).build();
 
 		Channel savedChannel = channelRepository.save(channel);
+
+		boardService.createDefaultBoards(savedChannel);
 
 		return ChannelResponse.from(savedChannel);
 	}

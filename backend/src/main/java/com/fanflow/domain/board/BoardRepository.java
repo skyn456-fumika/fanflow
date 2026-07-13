@@ -13,6 +13,8 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
 	boolean existsByCode(String code);
 
+	boolean existsByChannel_ChannelIdAndCode(Long channelId, String code);
+
 	List<Board> findByActiveTrueOrderBySortOrderAsc();
 
 	@Query("""
