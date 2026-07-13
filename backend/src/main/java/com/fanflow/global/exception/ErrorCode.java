@@ -43,7 +43,9 @@ public enum ErrorCode {
 
 	// Report
 	REPORT_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "신고 대상을 찾을 수 없습니다."), ALREADY_REPORTED(HttpStatus.BAD_REQUEST, "이미 신고한 대상입니다."),
-	REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."), REPORT_ALREADY_RESOLVED(HttpStatus.BAD_REQUEST, "이미 처리된 신고입니다.");
+	REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."), REPORT_ALREADY_RESOLVED(HttpStatus.BAD_REQUEST, "이미 처리된 신고입니다."),
+
+	ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."), NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;

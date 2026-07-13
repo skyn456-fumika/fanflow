@@ -3,6 +3,7 @@ package com.fanflow.domain.user;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +17,7 @@ import com.fanflow.domain.user.dto.PasswordUpdateRequest;
 import com.fanflow.domain.user.dto.ProfileImageUpdateResponse;
 import com.fanflow.domain.user.dto.SignupRequest;
 import com.fanflow.domain.user.dto.UserDeleteRequest;
+import com.fanflow.domain.user.dto.UserPublicProfileResponse;
 import com.fanflow.domain.user.dto.UserResponse;
 import com.fanflow.global.response.ApiResponse;
 import com.fanflow.global.response.PageResponse;
@@ -93,5 +95,28 @@ public class UserController {
 		ProfileImageUpdateResponse response = userService.updateProfileImage(userDetails.getUserId(), file);
 
 		return ApiResponse.success("프로필 이미지가 변경되었습니다.", response);
+	}
+
+	@GetMapping("/api/users/{userId}/profile")
+	public ApiResponse<UserPublicProfileResponse> getPublicProfile(@PathVariable Long userId) {
+		UserPublicProfileResponse response = userService.getPublicProfile(userId);
+
+		return ApiResponse.success("공개 프로필 조회에 성공했습니다.", response);
+	}
+
+	@GetMapping("/api/users/{userId}/posts")
+	public ApiResponse<PageResponse<PostListResponse>> getPublicPosts(@PathVariable Long userId, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size) {
+		PageResponse<PostListResponse> response = userService.getPublicPosts(userId, page, size);
+
+		return ApiResponse.success("공개 게시글 목록 조회에 성공했습니다.", response);
+	}
+
+	@GetMapping("/api/users/{userId}/comments")
+	public ApiResponse<PageResponse<CommentResponse>> getPublicComments(@PathVariable Long userId, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size) {
+		PageResponse<CommentResponse> response = userService.getPublicComments(userId, page, size);
+
+		return ApiResponse.success("공개 댓글 목록 조회에 성공했습니다.", response);
 	}
 }

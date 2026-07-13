@@ -64,4 +64,40 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	long countByDeletedFalseAndCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
 	long countByDeletedFalseAndBlindTrue();
+
+	@Query(value = """
+			SELECT c
+			FROM Comment c
+			JOIN FETCH c.post p
+			JOIN FETCH c.writer w
+			WHERE w.userId = :userId
+			  AND c.deleted = false
+			  AND c.blind = false
+			  AND p.deleted = false
+			  AND p.blind = false
+			""", countQuery = """
+			SELECT COUNT(c)
+			FROM Comment c
+			JOIN c.post p
+			JOIN c.writer w
+			WHERE w.userId = :userId
+			  AND c.deleted = false
+			  AND c.blind = false
+			  AND p.deleted = false
+			  AND p.blind = false
+			""")
+	Page<Comment> findPublicCommentsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+	@Query("""
+			SELECT COUNT(c)
+			FROM Comment c
+			JOIN c.post p
+			JOIN c.writer w
+			WHERE w.userId = :userId
+			  AND c.deleted = false
+			  AND c.blind = false
+			  AND p.deleted = false
+			  AND p.blind = false
+			""")
+	long countPublicCommentsByUserId(@Param("userId") Long userId);
 }

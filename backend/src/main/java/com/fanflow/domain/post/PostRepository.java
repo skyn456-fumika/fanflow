@@ -135,4 +135,24 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 	long countByDeletedFalseAndCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
 	long countByDeletedFalseAndBlindTrue();
+
+	@Query(value = """
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH p.writer w
+			WHERE w.userId = :userId
+			  AND p.deleted = false
+			  AND p.blind = false
+			""", countQuery = """
+			SELECT COUNT(p)
+			FROM Post p
+			JOIN p.writer w
+			WHERE w.userId = :userId
+			  AND p.deleted = false
+			  AND p.blind = false
+			""")
+	Page<Post> findPublicPostsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+	long countByWriter_UserIdAndDeletedFalseAndBlindFalse(Long userId);
 }

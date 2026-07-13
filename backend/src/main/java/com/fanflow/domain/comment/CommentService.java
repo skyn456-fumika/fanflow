@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fanflow.domain.comment.dto.CommentCreateRequest;
 import com.fanflow.domain.comment.dto.CommentResponse;
+import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.user.User;
@@ -25,6 +26,8 @@ public class CommentService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 
+	private final NotificationService notificationService;
+
 	@Transactional
 	public CommentResponse createComment(Long postId, Long userId, CommentCreateRequest request) {
 		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
@@ -40,6 +43,11 @@ public class CommentService {
 		Comment savedComment = commentRepository.save(comment);
 
 		post.increaseCommentCount();
+
+		if (!post.getWriter().getUserId().equals(writer.getUserId())) {
+			notificationService.createCommentOnPostNotification(post.getWriter(), post.getPostId(), savedComment.getCommentId(),
+					writer.getNickname());
+		}
 
 		return CommentResponse.from(savedComment);
 	}

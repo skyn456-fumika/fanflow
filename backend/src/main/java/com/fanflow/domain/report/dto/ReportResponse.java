@@ -28,10 +28,15 @@ public class ReportResponse {
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
-	public static ReportResponse from(Report report) {
+	private Long targetPostId;
+	private String targetTitle;
+	private String targetPreview;
+
+	public static ReportResponse from(Report report, Long targetPostId, String targetTitle, String targetPreview) {
 		return ReportResponse.builder().reportId(report.getReportId()).reporterId(report.getReporter().getUserId())
 				.reporterEmail(report.getReporter().getEmail()).reporterNickname(report.getReporter().getNickname())
-				.targetType(report.getTargetType()).targetId(report.getTargetId()).reason(report.getReason()).status(report.getStatus())
-				.createdAt(report.getCreatedAt()).updatedAt(report.getUpdatedAt()).build();
+				.targetType(report.getTargetType()).targetId(report.getTargetId()).targetPostId(targetPostId).targetTitle(targetTitle)
+				.targetPreview(targetPreview).reason(report.getReason()).status(report.getStatus()).createdAt(report.getCreatedAt())
+				.updatedAt(report.getUpdatedAt()).build();
 	}
 }

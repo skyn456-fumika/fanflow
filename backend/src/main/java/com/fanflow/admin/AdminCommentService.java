@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fanflow.domain.comment.Comment;
 import com.fanflow.domain.comment.CommentRepository;
 import com.fanflow.domain.comment.dto.CommentResponse;
+import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
 import com.fanflow.global.response.PageResponse;
@@ -22,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class AdminCommentService {
 
 	private final CommentRepository commentRepository;
+
+	private final NotificationService notificationService;
 
 	public PageResponse<CommentResponse> getComments(String keyword, int page, int size) {
 		page = Math.max(page, 0);
@@ -52,6 +55,8 @@ public class AdminCommentService {
 		if (!comment.isBlind()) {
 			comment.blind();
 			comment.getPost().decreaseCommentCount();
+
+			notificationService.createCommentBlindedNotification(comment.getWriter(), comment.getPost().getPostId(), comment.getCommentId());
 		}
 	}
 

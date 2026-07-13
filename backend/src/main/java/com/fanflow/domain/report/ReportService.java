@@ -49,7 +49,7 @@ public class ReportService {
 
 		Report savedReport = reportRepository.save(report);
 
-		return ReportResponse.from(savedReport);
+		return toResponse(savedReport);
 	}
 
 	public PageResponse<ReportResponse> getReports(String status, String targetType, int page, int size) {
@@ -70,7 +70,7 @@ public class ReportService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
-		Page<ReportResponse> reports = reportRepository.searchReports(reportStatus, reportTargetType, pageable).map(ReportResponse::from);
+		Page<ReportResponse> reports = reportRepository.searchReports(reportStatus, reportTargetType, pageable).map(this::toResponse);
 
 		return PageResponse.from(reports);
 	}
@@ -132,5 +132,43 @@ public class ReportService {
 		} catch (IllegalArgumentException e) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
 		}
+	}
+
+	private ReportResponse toResponse(Report report) {
+		if (report.getTargetType() == ReportTargetType.POST) {
+			Post post = postRepository.findById(report.getTargetId()).orElse(null);
+
+			if (post == null) {
+				return ReportResponse.from(report, null, "삭제된 게시글", "대상을 찾을 수 없습니다.");
+			}
+
+			return ReportResponse.from(report, post.getPostId(), post.getTitle(), createPreview(post.getContent()));
+		}
+
+		if (report.getTargetType() == ReportTargetType.COMMENT) {
+			Comment comment = commentRepository.findById(report.getTargetId()).orElse(null);
+
+			if (comment == null) {
+				return ReportResponse.from(report, null, "삭제된 댓글", "대상을 찾을 수 없습니다.");
+			}
+
+			return ReportResponse.from(report, comment.getPost().getPostId(), comment.getPost().getTitle(), createPreview(comment.getContent()));
+		}
+
+		return ReportResponse.from(report, null, "-", "-");
+	}
+
+	private String createPreview(String text) {
+		if (text == null || text.isBlank()) {
+			return "";
+		}
+
+		String plainText = text.replaceAll("<[^>]*>", "").replace("&nbsp;", " ").trim();
+
+		if (plainText.length() <= 60) {
+			return plainText;
+		}
+
+		return plainText.substring(0, 60) + "...";
 	}
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   activateUser,
   blindComment,
@@ -1032,9 +1032,9 @@ function AdminPage() {
                   <tr>
                     <th>ID</th>
                     <th>대상</th>
-                    <th>대상 ID</th>
+                    <th>대상 정보</th>
                     <th>신고자</th>
-                    <th>사유</th>
+                    <th>신고 사유</th>
                     <th>상태</th>
                     <th>신고일</th>
                     <th>관리</th>
@@ -1054,7 +1054,30 @@ function AdminPage() {
                         <tr key={report.reportId}>
                           <td>{report.reportId}</td>
                           <td>{report.targetType === 'POST' ? '게시글' : '댓글'}</td>
-                          <td>{report.targetId}</td>
+
+                          <td>
+                            <div className="admin-report-target">
+                              <strong>
+                                {report.targetTitle || `대상 ID ${report.targetId}`}
+                              </strong>
+
+                              {report.targetPreview && (
+                                <p>{report.targetPreview}</p>
+                              )}
+
+                              {report.targetPostId ? (
+                                <Link
+                                  to={`/posts/${report.targetPostId}`}
+                                  className="admin-inline-link"
+                                >
+                                  대상 보기
+                                </Link>
+                              ) : (
+                                <span className="admin-muted-text">대상 없음</span>
+                              )}
+                            </div>
+                          </td>
+
                           <td>{report.reporterNickname}</td>
                           <td>{report.reason}</td>
                           <td>{isPending ? '대기' : '처리완료'}</td>

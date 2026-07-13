@@ -8,6 +8,8 @@ import SignupPage from '../pages/auth/SignupPage'
 import MyPage from '../pages/user/MyPage'
 import AdminPage from '../pages/admin/AdminPage'
 import HomePage from '../pages/home/HomePage'
+import UserProfilePage from '../pages/user/UserProfilePage'
+import NotificationPage from '../pages/notification/NotificationPage'
 
 function AppRouter() {
   return (
@@ -21,6 +23,8 @@ function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/notifications" element={<NotificationPage />} />
+        <Route path="/users/:userId" element={<UserProfilePage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>
     </Routes>

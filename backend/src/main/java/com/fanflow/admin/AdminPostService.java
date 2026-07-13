@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.post.dto.PostListResponse;
@@ -22,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class AdminPostService {
 
 	private final PostRepository postRepository;
+
+	private final NotificationService notificationService;
 
 	public PageResponse<PostListResponse> getPosts(String boardCode, String keyword, int page, int size) {
 		page = Math.max(page, 0);
@@ -46,7 +49,15 @@ public class AdminPostService {
 	public void blindPost(Long postId) {
 		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
-		post.blind();
+		if (post.isDeleted()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		if (!post.isBlind()) {
+			post.blind();
+
+			notificationService.createPostBlindedNotification(post.getWriter(), post.getPostId());
+		}
 	}
 
 	@Transactional

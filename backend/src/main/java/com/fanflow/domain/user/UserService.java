@@ -22,6 +22,7 @@ import com.fanflow.domain.user.dto.PasswordUpdateRequest;
 import com.fanflow.domain.user.dto.ProfileImageUpdateResponse;
 import com.fanflow.domain.user.dto.SignupRequest;
 import com.fanflow.domain.user.dto.UserDeleteRequest;
+import com.fanflow.domain.user.dto.UserPublicProfileResponse;
 import com.fanflow.domain.user.dto.UserResponse;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
@@ -157,5 +158,46 @@ public class UserService {
 		}
 
 		return ProfileImageUpdateResponse.builder().profileImageUrl(user.getProfileImageUrl()).build();
+	}
+
+	public UserPublicProfileResponse getPublicProfile(Long userId) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		if (!user.isActive()) {
+			throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+		}
+
+		long postCount = postRepository.countByWriter_UserIdAndDeletedFalseAndBlindFalse(userId);
+		long commentCount = commentRepository.countPublicCommentsByUserId(userId);
+
+		return UserPublicProfileResponse.from(user, postCount, commentCount);
+	}
+
+	public PageResponse<PostListResponse> getPublicPosts(Long userId, int page, int size) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		if (!user.isActive()) {
+			throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+		}
+
+		Pageable pageable = createPageable(page, size);
+
+		Page<PostListResponse> posts = postRepository.findPublicPostsByUserId(userId, pageable).map(PostListResponse::from);
+
+		return PageResponse.from(posts);
+	}
+
+	public PageResponse<CommentResponse> getPublicComments(Long userId, int page, int size) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		if (!user.isActive()) {
+			throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+		}
+
+		Pageable pageable = createPageable(page, size);
+
+		Page<CommentResponse> comments = commentRepository.findPublicCommentsByUserId(userId, pageable).map(CommentResponse::from);
+
+		return PageResponse.from(comments);
 	}
 }

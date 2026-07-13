@@ -352,16 +352,20 @@ function PostDetailPage() {
         </div>
 
         <div className="post-author-row">
-          <div className="profile-avatar">
-            {post.writerProfileImageUrl ? (
-              <img src={getImageUrl(post.writerProfileImageUrl)} alt="작성자 프로필" />
-            ) : (
-              <span>{post.writerNickname?.charAt(0) || '?'}</span>
-            )}
-          </div>
+          <Link to={`/users/${post.writerId}`} className="post-author-avatar-link">
+            <div className="profile-avatar">
+              {post.writerProfileImageUrl ? (
+                <img src={getImageUrl(post.writerProfileImageUrl)} alt="작성자 프로필" />
+              ) : (
+                <span>{post.writerNickname?.charAt(0) || '?'}</span>
+              )}
+            </div>
+          </Link>
 
           <div className="post-author-info">
-            <strong>{post.writerNickname}</strong>
+            <Link to={`/users/${post.writerId}`} className="post-author-name-link">
+              {post.writerNickname}
+            </Link>
 
             <div className="post-meta">
               <span>조회 {post.viewCount}</span>
@@ -436,7 +440,7 @@ function PostDetailPage() {
               return (
                 <div key={comment.commentId} className="comment-item">
                   <div className="comment-header">
-                    <div className="comment-writer-box">
+                    <Link to={`/users/${comment.writerId}`} className="comment-writer-box comment-author-link">
                       <div className="profile-avatar small">
                         {comment.writerProfileImageUrl ? (
                           <img
@@ -452,7 +456,7 @@ function PostDetailPage() {
                         <strong>{comment.writerNickname}</strong>
                         <span>{comment.createdAt}</span>
                       </div>
-                    </div>
+                    </Link>
                   </div>
 
                   <p>{comment.content}</p>
