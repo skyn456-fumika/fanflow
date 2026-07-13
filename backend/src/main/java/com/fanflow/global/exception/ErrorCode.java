@@ -27,8 +27,8 @@ public enum ErrorCode {
 
 	// Board / Post
 	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시판을 찾을 수 없습니다."), BOARD_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "비활성화된 게시판입니다."),
-	NOTICE_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "공지사항은 관리자만 작성할 수 있습니다."), POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
-	POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 대한 권한이 없습니다."),
+	BOARD_CODE_DUPLICATED(HttpStatus.BAD_REQUEST, "이미 사용 중인 게시판 코드입니다."), NOTICE_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "공지사항은 관리자만 작성할 수 있습니다."),
+	POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."), POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "게시글에 대한 권한이 없습니다."),
 
 	// Comment
 	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."), COMMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "댓글에 대한 권한이 없습니다."),

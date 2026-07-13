@@ -2261,3 +2261,23 @@ textarea:focus {
     flex-direction: column;
   }
 }
+
+.admin-board-manager {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(7, 12, 26, 0.28);
+}
+
+.admin-board-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .admin-board-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

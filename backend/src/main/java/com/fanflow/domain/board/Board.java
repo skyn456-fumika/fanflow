@@ -56,6 +56,13 @@ public class Board extends BaseEntity {
 		this.active = active;
 	}
 
+	public void update(String code, String name, String description, int sortOrder) {
+		this.code = code;
+		this.name = name;
+		this.description = description;
+		this.sortOrder = sortOrder;
+	}
+
 	public void activate() {
 		this.active = true;
 	}

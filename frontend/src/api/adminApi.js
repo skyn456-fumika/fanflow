@@ -188,3 +188,67 @@ export const deactivateAdminChannel = async (channelId) => {
 
   return response.data
 }
+
+export const getAdminChannelBoards = async (channelId) => {
+  const response = await axiosInstance.get(`/api/admin/channels/${channelId}/boards`)
+
+  return response.data
+}
+
+export const createAdminChannelBoard = async (
+  channelId,
+  {
+    code,
+    name,
+    description,
+    sortOrder,
+  },
+) => {
+  const response = await axiosInstance.post(`/api/admin/channels/${channelId}/boards`, {
+    code,
+    name,
+    description,
+    sortOrder,
+  })
+
+  return response.data
+}
+
+export const updateAdminChannelBoard = async (
+  channelId,
+  boardId,
+  {
+    code,
+    name,
+    description,
+    sortOrder,
+  },
+) => {
+  const response = await axiosInstance.put(
+    `/api/admin/channels/${channelId}/boards/${boardId}`,
+    {
+      code,
+      name,
+      description,
+      sortOrder,
+    },
+  )
+
+  return response.data
+}
+
+export const activateAdminChannelBoard = async (channelId, boardId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/channels/${channelId}/boards/${boardId}/activate`,
+  )
+
+  return response.data
+}
+
+export const deactivateAdminChannelBoard = async (channelId, boardId) => {
+  const response = await axiosInstance.patch(
+    `/api/admin/channels/${channelId}/boards/${boardId}/deactivate`,
+  )
+
+  return response.data
+}

@@ -15,6 +15,12 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
 	boolean existsByChannel_ChannelIdAndCode(Long channelId, String code);
 
+	boolean existsByChannel_ChannelIdAndCodeAndBoardIdNot(Long channelId, String code, Long boardId);
+
+	List<Board> findByChannel_ChannelIdOrderBySortOrderAsc(Long channelId);
+
+	Optional<Board> findByChannel_ChannelIdAndBoardId(Long channelId, Long boardId);
+
 	List<Board> findByActiveTrueOrderBySortOrderAsc();
 
 	@Query("""
@@ -44,4 +50,5 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 			  AND b.code = :code
 			""")
 	Optional<Board> findByChannelSlugAndCode(@Param("channelSlug") String channelSlug, @Param("code") String code);
+
 }

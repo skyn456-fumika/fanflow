@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   activateAdminChannel,
+  activateAdminChannelBoard,
+  createAdminChannelBoard,
+  deactivateAdminChannelBoard,
+  getAdminChannelBoards,
+  updateAdminChannelBoard,
   activateUser,
   blindComment,
   blindPost,
@@ -78,6 +83,18 @@ function AdminPage() {
     description: '',
     profileImageUrl: '',
     bannerImageUrl: '',
+  })
+
+  const [selectedChannelForBoards, setSelectedChannelForBoards] = useState(null)
+  const [channelBoards, setChannelBoards] = useState([])
+  const [channelBoardLoading, setChannelBoardLoading] = useState(false)
+  const [editingChannelBoardId, setEditingChannelBoardId] = useState(null)
+
+  const [channelBoardForm, setChannelBoardForm] = useState({
+    code: '',
+    name: '',
+    description: '',
+    sortOrder: 0,
   })
 
   const requireLogin = () => {
@@ -370,6 +387,42 @@ function AdminPage() {
       setErrorMessage('채널 목록을 불러오지 못했습니다.')
     } finally {
       setChannelLoading(false)
+    }
+  }
+
+  const loadChannelBoards = async (channelId) => {
+    if (!channelId) {
+      return
+    }
+
+    try {
+      setChannelBoardLoading(true)
+      setErrorMessage('')
+
+      const result = await getAdminChannelBoards(channelId)
+
+      if (result.success) {
+        setChannelBoards(result.data)
+      } else {
+        setErrorMessage(result.message || '채널 게시판 목록을 불러오지 못했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+        return
+      }
+
+      if (error.response?.status === 403) {
+        requireAdmin()
+        return
+      }
+
+      setErrorMessage('채널 게시판 목록을 불러오지 못했습니다.')
+    } finally {
+      setChannelBoardLoading(false)
     }
   }
 
@@ -708,6 +761,140 @@ function AdminPage() {
     }
   }
 
+  const handleManageChannelBoards = async (channel) => {
+    setSelectedChannelForBoards(channel)
+    resetChannelBoardForm()
+    await loadChannelBoards(channel.channelId)
+  }
+
+  const handleChannelBoardFormChange = (e) => {
+    const { name, value } = e.target
+
+    setChannelBoardForm((prev) => ({
+      ...prev,
+      [name]: name === 'sortOrder' ? Number(value) : value,
+    }))
+  }
+
+  const handleSubmitChannelBoard = async (e) => {
+    e.preventDefault()
+
+    if (!selectedChannelForBoards) {
+      alert('게시판을 관리할 채널을 선택해주세요.')
+      return
+    }
+
+    if (!channelBoardForm.code.trim()) {
+      alert('게시판 코드를 입력해주세요.')
+      return
+    }
+
+    if (!/^[A-Z0-9_]+$/.test(channelBoardForm.code.trim().toUpperCase())) {
+      alert('게시판 코드는 영문 대문자, 숫자, 언더스코어만 사용할 수 있습니다.')
+      return
+    }
+
+    if (!channelBoardForm.name.trim()) {
+      alert('게시판명을 입력해주세요.')
+      return
+    }
+
+    const payload = {
+      code: channelBoardForm.code.trim().toUpperCase(),
+      name: channelBoardForm.name.trim(),
+      description: channelBoardForm.description.trim(),
+      sortOrder: Number(channelBoardForm.sortOrder),
+    }
+
+    try {
+      const result = editingChannelBoardId
+        ? await updateAdminChannelBoard(
+            selectedChannelForBoards.channelId,
+            editingChannelBoardId,
+            payload,
+          )
+        : await createAdminChannelBoard(
+            selectedChannelForBoards.channelId,
+            payload,
+          )
+
+      if (result.success) {
+        alert(editingChannelBoardId ? '게시판이 수정되었습니다.' : '게시판이 생성되었습니다.')
+        resetChannelBoardForm()
+        await loadChannelBoards(selectedChannelForBoards.channelId)
+      } else {
+        alert(result.message || '게시판 저장에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '게시판 저장에 실패했습니다.')
+    }
+  }
+
+  const handleEditChannelBoard = (board) => {
+    setEditingChannelBoardId(board.boardId)
+    setChannelBoardForm({
+      code: board.code || '',
+      name: board.name || '',
+      description: board.description || '',
+      sortOrder: board.sortOrder ?? 0,
+    })
+  }
+
+  const handleActivateChannelBoard = async (boardId) => {
+    if (!selectedChannelForBoards) {
+      return
+    }
+
+    if (!window.confirm('해당 게시판을 활성화하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await activateAdminChannelBoard(
+        selectedChannelForBoards.channelId,
+        boardId,
+      )
+
+      if (result.success) {
+        alert('게시판이 활성화되었습니다.')
+        await loadChannelBoards(selectedChannelForBoards.channelId)
+      } else {
+        alert(result.message || '게시판 활성화에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '게시판 활성화에 실패했습니다.')
+    }
+  }
+
+  const handleDeactivateChannelBoard = async (boardId) => {
+    if (!selectedChannelForBoards) {
+      return
+    }
+
+    if (!window.confirm('해당 게시판을 비활성화하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const result = await deactivateAdminChannelBoard(
+        selectedChannelForBoards.channelId,
+        boardId,
+      )
+
+      if (result.success) {
+        alert('게시판이 비활성화되었습니다.')
+        await loadChannelBoards(selectedChannelForBoards.channelId)
+      } else {
+        alert(result.message || '게시판 비활성화에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '게시판 비활성화에 실패했습니다.')
+    }
+  }
+
   const resetChannelForm = () => {
     setEditingChannelId(null)
     setChannelForm({
@@ -716,6 +903,16 @@ function AdminPage() {
       description: '',
       profileImageUrl: '',
       bannerImageUrl: '',
+    })
+  }
+
+  const resetChannelBoardForm = () => {
+    setEditingChannelBoardId(null)
+    setChannelBoardForm({
+      code: '',
+      name: '',
+      description: '',
+      sortOrder: 0,
     })
   }
 
@@ -1399,6 +1596,7 @@ function AdminPage() {
           {channelLoading ? (
             <p>불러오는 중...</p>
           ) : (
+            <>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -1437,6 +1635,14 @@ function AdminPage() {
                               수정
                             </button>
 
+                            <button
+                              type="button"
+                              className="admin-normal-button"
+                              onClick={() => handleManageChannelBoards(channel)}
+                            >
+                              게시판 관리
+                            </button>
+
                             {channel.active ? (
                               <button
                                 type="button"
@@ -1469,6 +1675,175 @@ function AdminPage() {
                 </tbody>
               </table>
             </div>
+            {selectedChannelForBoards && (
+              <div className="admin-board-manager">
+                <div className="home-section-title">
+                  <div>
+                    <h2>{selectedChannelForBoards.name} 게시판 관리</h2>
+                    <p>이 채널에서 사용할 게시판을 생성하고 관리합니다.</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      setSelectedChannelForBoards(null)
+                      setChannelBoards([])
+                      resetChannelBoardForm()
+                    }}
+                  >
+                    닫기
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmitChannelBoard} className="admin-channel-form">
+                  <div className="admin-board-form-grid">
+                    <div className="form-group">
+                      <label htmlFor="boardCode">게시판 코드</label>
+                      <input
+                        id="boardCode"
+                        name="code"
+                        type="text"
+                        value={channelBoardForm.code}
+                        onChange={handleChannelBoardFormChange}
+                        placeholder="예: CLIP"
+                        maxLength={30}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="boardName">게시판명</label>
+                      <input
+                        id="boardName"
+                        name="name"
+                        type="text"
+                        value={channelBoardForm.name}
+                        onChange={handleChannelBoardFormChange}
+                        placeholder="예: 클립"
+                        maxLength={50}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="boardSortOrder">정렬 순서</label>
+                      <input
+                        id="boardSortOrder"
+                        name="sortOrder"
+                        type="number"
+                        value={channelBoardForm.sortOrder}
+                        onChange={handleChannelBoardFormChange}
+                        min={0}
+                      />
+                    </div>
+
+                    <div className="form-group admin-channel-form-wide">
+                      <label htmlFor="boardDescription">설명</label>
+                      <input
+                        id="boardDescription"
+                        name="description"
+                        type="text"
+                        value={channelBoardForm.description}
+                        onChange={handleChannelBoardFormChange}
+                        placeholder="게시판 설명"
+                        maxLength={255}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="write-action-row">
+                    <button type="submit" className="primary-button">
+                      {editingChannelBoardId ? '게시판 수정' : '게시판 생성'}
+                    </button>
+
+                    {editingChannelBoardId && (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={resetChannelBoardForm}
+                      >
+                        취소
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                {channelBoardLoading ? (
+                  <p>불러오는 중...</p>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>코드</th>
+                          <th>게시판명</th>
+                          <th>설명</th>
+                          <th>정렬</th>
+                          <th>상태</th>
+                          <th>관리</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {channelBoards.length === 0 ? (
+                          <tr>
+                            <td colSpan="7">게시판이 없습니다.</td>
+                          </tr>
+                        ) : (
+                          channelBoards.map((board) => (
+                            <tr key={board.boardId}>
+                              <td>{board.boardId}</td>
+                              <td>{board.code}</td>
+                              <td>{board.name}</td>
+                              <td>{board.description || '-'}</td>
+                              <td>{board.sortOrder}</td>
+                              <td>{board.active ? '활성' : '비활성'}</td>
+                              <td>
+                                <div className="admin-action-row">
+                                  <button
+                                    type="button"
+                                    className="admin-normal-button"
+                                    onClick={() => handleEditChannelBoard(board)}
+                                  >
+                                    수정
+                                  </button>
+
+                                  {board.active ? (
+                                    <button
+                                      type="button"
+                                      className="admin-danger-button"
+                                      onClick={() => handleDeactivateChannelBoard(board.boardId)}
+                                    >
+                                      비활성화
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="admin-normal-button"
+                                      onClick={() => handleActivateChannelBoard(board.boardId)}
+                                    >
+                                      활성화
+                                    </button>
+                                  )}
+
+                                  <Link
+                                    to={`/channels/${selectedChannelForBoards.slug}/posts?boardCode=${board.code}`}
+                                    className="admin-inline-link"
+                                  >
+                                    보기
+                                  </Link>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </>  
           )}
         </div>
       )}
