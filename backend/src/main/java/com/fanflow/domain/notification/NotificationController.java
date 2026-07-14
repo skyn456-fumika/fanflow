@@ -3,6 +3,7 @@ package com.fanflow.domain.notification;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,5 +67,12 @@ public class NotificationController {
 		notificationService.readAllNotifications(userDetails.getUserId());
 
 		return ApiResponse.success("모든 알림을 읽음 처리했습니다.");
+	}
+
+	@DeleteMapping("/api/notifications/{notificationId}")
+	public ApiResponse<Void> deleteNotification(@PathVariable Long notificationId, @CurrentUser CustomUserDetails userDetails) {
+		notificationService.deleteNotification(notificationId, userDetails.getUserId());
+
+		return ApiResponse.success("알림을 삭제했습니다.");
 	}
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  deleteNotification,
   getNotifications,
   readAllNotifications,
   readNotification,
@@ -17,6 +18,7 @@ function NotificationPage() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const [readAllLoading, setReadAllLoading] = useState(false)
+  const [deletingNotificationId, setDeletingNotificationId] = useState(null)
 
   const hasUnreadNotification = notifications.some(
     (notification) => !notification.readStatus,
@@ -142,6 +144,48 @@ function NotificationPage() {
     }
   }
 
+  const handleDeleteNotification = async (e, notification) => {
+    e.stopPropagation()
+
+    if (!window.confirm('이 알림을 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      setDeletingNotificationId(notification.notificationId)
+
+      const result = await deleteNotification(
+        notification.notificationId,
+      )
+
+      if (result.success) {
+        if (!notification.readStatus) {
+          window.dispatchEvent(new Event('notification-change'))
+        }
+
+        await loadNotifications()
+      } else {
+        alert(result.message || '알림 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+        navigate('/login', { replace: true })
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '알림 삭제에 실패했습니다.',
+      )
+    } finally {
+      setDeletingNotificationId(null)
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -175,13 +219,19 @@ function NotificationPage() {
         ) : (
           <div className="notification-list">
             {notifications.map((notification) => (
-              <button
-                type="button"
+              <div
                 key={notification.notificationId}
                 className={`notification-item ${
                   notification.readStatus ? 'read' : 'unread'
                 }`}
+                role="button"
+                tabIndex={0}
                 onClick={() => handleNotificationClick(notification)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleNotificationClick(notification)
+                  }
+                }}
               >
                 <div className="notification-item-header">
                   <span className="notification-type">
@@ -210,13 +260,30 @@ function NotificationPage() {
                 <p>{notification.message}</p>
 
                 <div className="notification-meta">
-                  <span>{notification.createdAt}</span>
+                  <div className="notification-meta-info">
+                    <span>{notification.createdAt}</span>
 
-                  {notification.targetPostId && (
-                    <span>게시글로 이동</span>
-                  )}
+                    {notification.targetPostId && (
+                      <span>게시글로 이동</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="notification-delete-button"
+                    disabled={
+                      deletingNotificationId === notification.notificationId
+                    }
+                    onClick={(e) =>
+                      handleDeleteNotification(e, notification)
+                    }
+                  >
+                    {deletingNotificationId === notification.notificationId
+                      ? '삭제 중...'
+                      : '삭제'}
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

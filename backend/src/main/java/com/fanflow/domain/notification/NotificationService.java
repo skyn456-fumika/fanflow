@@ -109,6 +109,18 @@ public class NotificationService {
 	}
 
 	@Transactional
+	public void deleteNotification(Long notificationId, Long userId) {
+		Notification notification = notificationRepository.findById(notificationId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+
+		if (!notification.getReceiver().getUserId().equals(userId)) {
+			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+		}
+
+		notificationRepository.delete(notification);
+	}
+
+	@Transactional
 	public void createSubscribedChannelNewPostNotifications(Post post) {
 		if (post == null || post.getWriter() == null || post.getBoard() == null || post.getBoard().getChannel() == null) {
 			return;
