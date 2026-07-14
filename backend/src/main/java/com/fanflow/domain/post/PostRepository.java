@@ -264,4 +264,38 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			ORDER BY p.createdAt DESC
 			""")
 	List<Post> findChannelHomeRecentPosts(@Param("channelSlug") String channelSlug, Pageable pageable);
+
+	@Query(value = """
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE p.deleted = false
+			  AND p.blind = false
+			  AND c.active = true
+			  AND b.active = true
+			  AND EXISTS (
+			      SELECT 1
+			      FROM ChannelSubscription cs
+			      WHERE cs.channel = c
+			        AND cs.user.userId = :userId
+			  )
+			""", countQuery = """
+			SELECT COUNT(p)
+			FROM Post p
+			JOIN p.board b
+			JOIN b.channel c
+			WHERE p.deleted = false
+			  AND p.blind = false
+			  AND c.active = true
+			  AND b.active = true
+			  AND EXISTS (
+			      SELECT 1
+			      FROM ChannelSubscription cs
+			      WHERE cs.channel = c
+			        AND cs.user.userId = :userId
+			  )
+			""")
+	Page<Post> findSubscriptionFeedPosts(@Param("userId") Long userId, Pageable pageable);
 }

@@ -2599,3 +2599,9 @@ textarea:focus {
   border-color: rgba(139, 92, 246, 0.38);
   background: rgba(139, 92, 246, 0.16);
 }
+
+.feed-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

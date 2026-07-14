@@ -80,10 +80,11 @@ function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
+    window.dispatchEvent(new Event('auth-change'))
+
     setIsLoggedIn(false)
     setMe(null)
     setUnreadCount(0)
-    // alert('로그아웃되었습니다.')
 
     const currentPath = location.pathname
 
@@ -92,6 +93,7 @@ function Header() {
       currentPath === '/notifications' ||
       currentPath === '/admin' ||
       currentPath === '/posts/write' ||
+      currentPath === '/feed' ||
       currentPath.endsWith('/edit')
 
     if (shouldMoveHome) {
@@ -111,6 +113,8 @@ function Header() {
 
           {isLoggedIn ? (
             <>
+              <Link to="/feed">피드</Link>
+
               <Link to="/mypage" className="nav-profile-link">
                 <span className="profile-avatar nav-profile-avatar">
                   {me?.profileImageUrl ? (

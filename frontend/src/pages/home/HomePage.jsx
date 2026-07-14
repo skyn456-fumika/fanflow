@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { getMain } from '../../api/mainApi'
+import { getSubscriptionFeed } from '../../api/feedApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -81,11 +82,16 @@ function HomeSection({ title, description, posts, emptyText }) {
 }
 
 function HomePage() {
+  const location = useLocation()
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
   const [mainData, setMainData] = useState({
     noticePosts: [],
     popularPosts: [],
     recentPosts: [],
     commentedPosts: [],
+    subscriptionPosts: [],
   })
 
   const [loading, setLoading] = useState(false)
@@ -96,10 +102,35 @@ function HomePage() {
       setLoading(true)
       setErrorMessage('')
 
+      const token = localStorage.getItem('accessToken')
+      const loggedIn = !!token
+
+      setIsLoggedIn(loggedIn)
+
       const result = await getMain()
 
       if (result.success) {
-        setMainData(result.data)
+        let subscriptionPosts = []
+
+        if (loggedIn) {
+          try {
+            const feedResult = await getSubscriptionFeed({
+              page: 0,
+              size: 5,
+            })
+
+            if (feedResult.success) {
+              subscriptionPosts = feedResult.data.content
+            }
+          } catch (error) {
+            console.error(error)
+          }
+        }
+
+        setMainData({
+          ...result.data,
+          subscriptionPosts,
+        })
       } else {
         setErrorMessage(result.message || '메인 페이지를 불러오지 못했습니다.')
       }
@@ -113,6 +144,18 @@ function HomePage() {
 
   useEffect(() => {
     loadMain()
+  }, [location.pathname])
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      loadMain()
+    }
+
+    window.addEventListener('auth-change', handleAuthChange)
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
+    }
   }, [])
 
   if (loading) {
@@ -160,6 +203,33 @@ function HomePage() {
           </div>
         </div>
       </section>
+
+      {isLoggedIn && (
+        <section className="home-section">
+          <div className="home-section-title">
+            <div>
+              <h2>구독 채널 최신글</h2>
+              <p>내가 구독한 채널에서 올라온 새 글입니다.</p>
+            </div>
+
+            <Link to="/feed" className="secondary-button">
+              피드 보기
+            </Link>
+          </div>
+
+          {mainData.subscriptionPosts.length === 0 ? (
+            <div className="empty-box">
+              구독 채널의 최신글이 없습니다. 관심 있는 채널을 구독해보세요.
+            </div>
+          ) : (
+            <div className="home-post-list">
+              {mainData.subscriptionPosts.map((post) => (
+                <HomePostCard key={post.postId} post={post} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <HomeSection
         title="공지사항"
