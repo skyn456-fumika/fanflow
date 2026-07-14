@@ -6,7 +6,10 @@ import {
   useSearchParams,
 } from 'react-router-dom'
 import { getSubscriptionFeed } from '../../api/feedApi'
-import { getMySubscribedChannels } from '../../api/channelApi'
+import {
+  getChannelHome,
+  getMySubscribedChannels,
+} from '../../api/channelApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -84,6 +87,11 @@ function FeedPage() {
   const [channelLoading, setChannelLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
+  const initialBoardCode = searchParams.get('boardCode') || ''
+  const [boards, setBoards] = useState([])
+  const [boardCode, setBoardCode] = useState(initialBoardCode)
+  const [boardLoading, setBoardLoading] = useState(false)
+
   const requireLogin = () => {
     localStorage.removeItem('accessToken')
 
@@ -100,6 +108,7 @@ function FeedPage() {
   const updateUrl = ({
     nextPage = page,
     nextChannelSlug = channelSlug,
+    nextBoardCode = boardCode,
     nextSort = sort,
   }) => {
     const params = {}
@@ -110,6 +119,10 @@ function FeedPage() {
 
     if (nextChannelSlug) {
       params.channelSlug = nextChannelSlug
+    }
+
+    if (nextChannelSlug && nextBoardCode) {
+      params.boardCode = nextBoardCode
     }
 
     if (nextSort !== 'latest') {
@@ -157,6 +170,7 @@ function FeedPage() {
         page,
         size: 10,
         channelSlug,
+        boardCode,
         sort,
       })
 
@@ -182,6 +196,47 @@ function FeedPage() {
     }
   }
 
+  const loadChannelBoards = async (selectedChannelSlug) => {
+    if (!selectedChannelSlug) {
+      setBoards([])
+      setBoardCode('')
+      return
+    }
+
+    try {
+      setBoardLoading(true)
+
+      const result = await getChannelHome(selectedChannelSlug)
+
+      if (result.success) {
+        const loadedBoards = result.data.boards || []
+
+        setBoards(loadedBoards)
+
+        setBoardCode((currentBoardCode) => {
+          if (!currentBoardCode) {
+            return ''
+          }
+
+          const boardExists = loadedBoards.some(
+            (board) => board.code === currentBoardCode,
+          )
+
+          return boardExists ? currentBoardCode : ''
+        })
+      } else {
+        setBoards([])
+        setBoardCode('')
+      }
+    } catch (error) {
+      console.error(error)
+      setBoards([])
+      setBoardCode('')
+    } finally {
+      setBoardLoading(false)
+    }
+  }
+
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
 
@@ -197,14 +252,20 @@ function FeedPage() {
     updateUrl({
       nextPage: page,
       nextChannelSlug: channelSlug,
+      nextBoardCode: boardCode,
       nextSort: sort,
     })
 
     loadFeed()
-  }, [page, channelSlug, sort])
+  }, [page, channelSlug, boardCode, sort])
+
+  useEffect(() => {
+    loadChannelBoards(channelSlug)
+  }, [channelSlug])
 
   const handleChannelChange = (e) => {
     setChannelSlug(e.target.value)
+    setBoardCode('')
     setPage(0)
   }
 
@@ -219,6 +280,11 @@ function FeedPage() {
 
   const handleNextPage = () => {
     setPage((prev) => prev + 1)
+  }
+
+  const handleBoardChange = (e) => {
+    setBoardCode(e.target.value)
+    setPage(0)
   }
 
   return (
@@ -255,6 +321,29 @@ function FeedPage() {
         </div>
 
         <div className="feed-filter-group">
+          <label htmlFor="feedBoard">게시판</label>
+
+          <select
+            id="feedBoard"
+            value={boardCode}
+            onChange={handleBoardChange}
+            disabled={!channelSlug || boardLoading}
+          >
+            <option value="">
+              {!channelSlug
+                ? '채널을 먼저 선택하세요'
+                : '전체 게시판'}
+            </option>
+
+            {boards.map((board) => (
+              <option key={board.boardId} value={board.code}>
+                {board.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="feed-filter-group">
           <label htmlFor="feedSort">정렬</label>
 
           <select
@@ -274,9 +363,11 @@ function FeedPage() {
         <p>불러오는 중...</p>
       ) : posts.length === 0 ? (
         <div className="empty-box">
-          {channelSlug
-            ? '선택한 채널에 표시할 게시글이 없습니다.'
-            : '구독한 채널의 게시글이 없습니다. 관심 있는 채널을 구독해보세요.'}
+          {boardCode
+            ? '선택한 게시판에 표시할 게시글이 없습니다.'
+            : channelSlug
+              ? '선택한 채널에 표시할 게시글이 없습니다.'
+              : '구독한 채널의 게시글이 없습니다. 관심 있는 채널을 구독해보세요.'}
         </div>
       ) : (
         <div className="feed-post-list">

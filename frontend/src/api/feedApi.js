@@ -4,6 +4,7 @@ export const getSubscriptionFeed = async ({
   page = 0,
   size = 10,
   channelSlug = '',
+  boardCode = '',
   sort = 'latest',
 }) => {
   const response = await axiosInstance.get('/api/feed/subscriptions', {
@@ -11,6 +12,7 @@ export const getSubscriptionFeed = async ({
       page,
       size,
       channelSlug: channelSlug || undefined,
+      boardCode: boardCode || undefined,
       sort,
     },
   })

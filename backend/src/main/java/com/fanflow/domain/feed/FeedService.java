@@ -20,12 +20,14 @@ public class FeedService {
 
 	private final PostRepository postRepository;
 
-	public PageResponse<PostListResponse> getSubscriptionFeed(Long userId, String channelSlug, String sort, int page, int size) {
+	public PageResponse<PostListResponse> getSubscriptionFeed(Long userId, String channelSlug, String boardCode, String sort, int page, int size) {
 		String normalizedChannelSlug = normalize(channelSlug);
+		String normalizedBoardCode = normalizeUpperCase(boardCode);
 
 		Pageable pageable = createPageable(page, size, sort);
 
-		Page<PostListResponse> posts = postRepository.findSubscriptionFeedPosts(userId, normalizedChannelSlug, pageable).map(PostListResponse::from);
+		Page<PostListResponse> posts = postRepository.findSubscriptionFeedPosts(userId, normalizedChannelSlug, normalizedBoardCode, pageable)
+				.map(PostListResponse::from);
 
 		return PageResponse.from(posts);
 	}
@@ -60,5 +62,13 @@ public class FeedService {
 		}
 
 		return value.trim().toLowerCase();
+	}
+
+	private String normalizeUpperCase(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+
+		return value.trim().toUpperCase();
 	}
 }
