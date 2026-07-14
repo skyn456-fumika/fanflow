@@ -105,35 +105,6 @@ function FeedPage() {
     })
   }
 
-  const updateUrl = ({
-    nextPage = page,
-    nextChannelSlug = channelSlug,
-    nextBoardCode = boardCode,
-    nextSort = sort,
-  }) => {
-    const params = {}
-
-    if (nextPage > 0) {
-      params.page = String(nextPage)
-    }
-
-    if (nextChannelSlug) {
-      params.channelSlug = nextChannelSlug
-    }
-
-    if (nextChannelSlug && nextBoardCode) {
-      params.boardCode = nextBoardCode
-    }
-
-    if (nextSort !== 'latest') {
-      params.sort = nextSort
-    }
-
-    setSearchParams(params, {
-      replace: true,
-    })
-  }
-
   const loadSubscribedChannels = async () => {
     try {
       setChannelLoading(true)
@@ -213,17 +184,23 @@ function FeedPage() {
 
         setBoards(loadedBoards)
 
-        setBoardCode((currentBoardCode) => {
-          if (!currentBoardCode) {
-            return ''
-          }
+        const boardExists =
+          !boardCode ||
+          loadedBoards.some((board) => board.code === boardCode)
 
-          const boardExists = loadedBoards.some(
-            (board) => board.code === currentBoardCode,
+        if (!boardExists) {
+          setSearchParams(
+            createFeedSearchParams({
+              nextPage: 0,
+              nextChannelSlug: selectedChannelSlug,
+              nextBoardCode: '',
+              nextSort: sort,
+            }),
+            {
+              replace: true,
+            },
           )
-
-          return boardExists ? currentBoardCode : ''
-        })
+        }
       } else {
         setBoards([])
         setBoardCode('')
@@ -235,6 +212,33 @@ function FeedPage() {
     } finally {
       setBoardLoading(false)
     }
+  }
+
+  const createFeedSearchParams = ({
+    nextPage = page,
+    nextChannelSlug = channelSlug,
+    nextBoardCode = boardCode,
+    nextSort = sort,
+  }) => {
+    const params = new URLSearchParams()
+
+    if (nextPage > 0) {
+      params.set('page', String(nextPage))
+    }
+
+    if (nextChannelSlug) {
+      params.set('channelSlug', nextChannelSlug)
+    }
+
+    if (nextChannelSlug && nextBoardCode) {
+      params.set('boardCode', nextBoardCode)
+    }
+
+    if (nextSort !== 'latest') {
+      params.set('sort', nextSort)
+    }
+
+    return params
   }
 
   useEffect(() => {
@@ -249,42 +253,98 @@ function FeedPage() {
   }, [])
 
   useEffect(() => {
-    updateUrl({
-      nextPage: page,
-      nextChannelSlug: channelSlug,
-      nextBoardCode: boardCode,
-      nextSort: sort,
-    })
-
-    loadFeed()
-  }, [page, channelSlug, boardCode, sort])
-
-  useEffect(() => {
     loadChannelBoards(channelSlug)
   }, [channelSlug])
 
+  useEffect(() => {
+    const nextPage = Math.max(
+      Number.parseInt(searchParams.get('page') || '0', 10) || 0,
+      0,
+    )
+
+    const nextChannelSlug = searchParams.get('channelSlug') || ''
+    const nextBoardCode = nextChannelSlug
+      ? searchParams.get('boardCode') || ''
+      : ''
+
+    const nextSort =
+      searchParams.get('sort') === 'popular'
+        ? 'popular'
+        : 'latest'
+
+    setPage(nextPage)
+    setChannelSlug(nextChannelSlug)
+    setBoardCode(nextBoardCode)
+    setSort(nextSort)
+  }, [searchParams])
+
+  useEffect(() => {
+    loadFeed()
+  }, [page, channelSlug, boardCode, sort])
+
   const handleChannelChange = (e) => {
-    setChannelSlug(e.target.value)
-    setBoardCode('')
-    setPage(0)
+    const nextChannelSlug = e.target.value
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage: 0,
+        nextChannelSlug,
+        nextBoardCode: '',
+        nextSort: sort,
+      }),
+    )
   }
 
   const handleSortChange = (e) => {
-    setSort(e.target.value)
-    setPage(0)
+    const nextSort = e.target.value
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage: 0,
+        nextChannelSlug: channelSlug,
+        nextBoardCode: boardCode,
+        nextSort,
+      }),
+    )
   }
 
   const handlePreviousPage = () => {
-    setPage((prev) => Math.max(prev - 1, 0))
+    const nextPage = Math.max(page - 1, 0)
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage,
+        nextChannelSlug: channelSlug,
+        nextBoardCode: boardCode,
+        nextSort: sort,
+      }),
+    )
   }
 
   const handleNextPage = () => {
-    setPage((prev) => prev + 1)
+    const nextPage = page + 1
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage,
+        nextChannelSlug: channelSlug,
+        nextBoardCode: boardCode,
+        nextSort: sort,
+      }),
+    )
   }
 
   const handleBoardChange = (e) => {
-    setBoardCode(e.target.value)
-    setPage(0)
+    const nextBoardCode = e.target.value
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage: 0,
+        nextChannelSlug: channelSlug,
+        nextBoardCode,
+        nextSort: sort,
+      }),
+    )
   }
 
   return (
