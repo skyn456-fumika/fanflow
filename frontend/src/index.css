@@ -2346,3 +2346,24 @@ textarea:focus {
 .home-post-thumbnail {
   display: block;
 }
+
+.notification-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 6px 0;
+  color: #c4b5fd;
+}
+
+.notification-path span:nth-child(2) {
+  color: #94a3b8;
+}
+
+.notification-target-title {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #cbd5e1;
+}

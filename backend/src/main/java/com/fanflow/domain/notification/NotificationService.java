@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fanflow.domain.notification.dto.NotificationResponse;
 import com.fanflow.domain.notification.dto.NotificationUnreadCountResponse;
+import com.fanflow.domain.post.Post;
+import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.user.User;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class NotificationService {
 
 	private final NotificationRepository notificationRepository;
+	private final PostRepository postRepository;
 
 	@Transactional
 	public void createCommentOnPostNotification(User receiver, Long postId, Long commentId, String commenterNickname) {
@@ -61,7 +64,7 @@ public class NotificationService {
 
 	public PageResponse<NotificationResponse> getMyNotifications(Long userId, Pageable pageable) {
 		Page<NotificationResponse> notifications = notificationRepository.findByReceiver_UserIdOrderByCreatedAtDesc(userId, pageable)
-				.map(NotificationResponse::from);
+				.map(this::toResponse);
 
 		return PageResponse.from(notifications);
 	}
@@ -82,5 +85,15 @@ public class NotificationService {
 		}
 
 		notification.read();
+	}
+
+	private NotificationResponse toResponse(Notification notification) {
+		Post post = null;
+
+		if (notification.getTargetPostId() != null) {
+			post = postRepository.findDetailById(notification.getTargetPostId()).orElse(null);
+		}
+
+		return NotificationResponse.from(notification, post);
 	}
 }

@@ -130,6 +130,20 @@ function NotificationPage() {
                   )}
                 </div>
 
+                {notification.channelName && (
+                  <div className="notification-path">
+                    <span>{notification.channelName}</span>
+                    <span>&gt;</span>
+                    <span>{notification.boardName || '게시판'}</span>
+                  </div>
+                )}
+
+                {notification.targetPostTitle && (
+                  <p className="notification-target-title">
+                    {notification.targetPostTitle}
+                  </p>
+                )}
+
                 <p>{notification.message}</p>
 
                 <div className="notification-meta">
