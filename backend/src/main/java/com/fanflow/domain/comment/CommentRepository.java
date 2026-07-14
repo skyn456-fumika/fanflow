@@ -63,6 +63,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			SELECT c
 			FROM Comment c
 			JOIN FETCH c.post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel ch
 			JOIN FETCH c.writer w
 			WHERE w.userId = :userId
 			  AND c.deleted = false
@@ -85,6 +87,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			SELECT c
 			FROM Comment c
 			JOIN FETCH c.post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel ch
 			JOIN FETCH c.writer w
 			WHERE w.userId = :userId
 			  AND c.deleted = false

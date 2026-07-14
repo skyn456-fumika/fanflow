@@ -19,6 +19,7 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 			FROM PostLike pl
 			JOIN FETCH pl.post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE pl.user.userId = :userId
 			  AND p.deleted = false

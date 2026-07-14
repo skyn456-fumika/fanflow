@@ -74,6 +74,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE w.userId = :userId
 			  AND p.deleted = false
@@ -150,6 +151,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE w.userId = :userId
 			  AND p.deleted = false

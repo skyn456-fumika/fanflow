@@ -36,6 +36,21 @@ function UserProfilePage() {
     return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`
   }
 
+  const ActivityPath = ({ item }) => (
+    <div className="activity-path">
+      {item.channelName && (
+        <>
+          <span className="activity-path-channel">{item.channelName}</span>
+          <span className="activity-path-separator">&gt;</span>
+        </>
+      )}
+
+      <span className="activity-path-board">
+        {item.boardName || '게시판'}
+      </span>
+    </div>
+  )
+
   const loadProfile = async () => {
     try {
       setLoading(true)
@@ -218,6 +233,8 @@ function UserProfilePage() {
                       key={post.postId}
                       className="mypage-activity-item"
                     >
+                      <ActivityPath item={post} />
+
                       <div>
                         <span className="board-badge">{post.boardName}</span>
                         <strong>{post.title}</strong>
@@ -270,6 +287,8 @@ function UserProfilePage() {
                       key={comment.commentId}
                       className="mypage-activity-item"
                     >
+                      <ActivityPath item={comment} />
+
                       <div>
                         <strong>{comment.content}</strong>
                       </div>

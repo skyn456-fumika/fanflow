@@ -2517,3 +2517,37 @@ textarea:focus {
 .channel-home-page .home-grid {
   align-items: start;
 }
+
+.activity-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.activity-path-channel {
+  color: #93c5fd;
+}
+
+.activity-path-board {
+  color: #c4b5fd;
+}
+
+.activity-path-separator {
+  color: #94a3b8;
+}
+
+.activity-comment-content {
+  margin: 8px 0 10px;
+  color: var(--text-sub);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.mypage-activity-item .activity-path {
+  margin-bottom: 8px;
+}
