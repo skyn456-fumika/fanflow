@@ -118,6 +118,10 @@ function PostDetailPage() {
 
   const isWriter = me && post.writerId === me.userId
 
+  const listPath = post.channelSlug
+    ? `/channels/${post.channelSlug}/posts?boardCode=${post.boardCode}`
+    : '/posts'
+
   const handleDeletePost = async () => {
     if (!window.confirm('게시글을 삭제하시겠습니까?')) {
       return
@@ -128,7 +132,7 @@ function PostDetailPage() {
 
       if (result.success) {
         //alert('게시글이 삭제되었습니다.')
-        navigate('/posts', { replace: true })
+        navigate(listPath, { replace: true })
       } else {
         alert(result.message || '게시글 삭제에 실패했습니다.')
       }
@@ -340,14 +344,29 @@ function PostDetailPage() {
           <p>게시글 상세 페이지입니다.</p>
         </div>
 
-        <Link to="/posts" className="secondary-button">
+        <Link to={listPath} className="secondary-button">
           목록
         </Link>
       </div>
 
       <div className="post-detail-box">
         <div className="post-main">
-          <span className="board-badge">{post.boardName}</span>
+          {post.channelSlug ? (
+            <div className="post-breadcrumb">
+              <Link to={`/channels/${post.channelSlug}`}>
+                {post.channelName || '채널'}
+              </Link>
+
+              <span>&gt;</span>
+
+              <Link to={`/channels/${post.channelSlug}/posts?boardCode=${post.boardCode}`}>
+                {post.boardName}
+              </Link>
+            </div>
+          ) : (
+            <span className="board-badge">{post.boardName}</span>
+          )}
+
           {post.notice && <span className="notice-badge">공지</span>}
         </div>
 

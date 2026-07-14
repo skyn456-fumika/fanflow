@@ -2,6 +2,7 @@ package com.fanflow.domain.post;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -197,4 +198,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			""")
 	Page<Post> searchPostsByChannel(@Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode, @Param("keyword") String keyword,
 			Pageable pageable);
+
+	@Query("""
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE p.postId = :postId
+			""")
+	Optional<Post> findDetailById(@Param("postId") Long postId);
 }

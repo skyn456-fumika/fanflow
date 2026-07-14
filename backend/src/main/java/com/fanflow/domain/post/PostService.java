@@ -117,7 +117,7 @@ public class PostService {
 
 	@Transactional
 	public PostResponse getPost(Long postId) {
-		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+		Post post = postRepository.findDetailById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
 		if (post.isDeleted() || post.isBlind()) {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);

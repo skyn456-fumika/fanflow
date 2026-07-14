@@ -13,6 +13,10 @@ public class PostResponse {
 
 	private Long postId;
 
+	private Long channelId;
+	private String channelName;
+	private String channelSlug;
+
 	private Long boardId;
 	private String boardCode;
 	private String boardName;
@@ -39,8 +43,10 @@ public class PostResponse {
 	private String writerProfileImageUrl;
 
 	public static PostResponse from(Post post) {
-		return PostResponse.builder().postId(post.getPostId()).boardId(post.getBoard().getBoardId()).boardCode(post.getBoard().getCode())
-				.boardName(post.getBoard().getName()).writerId(post.getWriter().getUserId()).writerNickname(post.getWriter().getNickname())
+		return PostResponse.builder().postId(post.getPostId()).channelId(post.getBoard().getChannel().getChannelId())
+				.channelName(post.getBoard().getChannel().getName()).channelSlug(post.getBoard().getChannel().getSlug())
+				.boardId(post.getBoard().getBoardId()).boardCode(post.getBoard().getCode()).boardName(post.getBoard().getName())
+				.writerId(post.getWriter().getUserId()).writerNickname(post.getWriter().getNickname())
 				.writerProfileImageUrl(post.getWriter().getProfileImageUrl()).title(post.getTitle()).content(post.getContent())
 				.viewCount(post.getViewCount()).likeCount(post.getLikeCount()).commentCount(post.getCommentCount()).notice(post.isNotice())
 				.blind(post.isBlind()).deleted(post.isDeleted()).createdAt(post.getCreatedAt()).updatedAt(post.getUpdatedAt())
