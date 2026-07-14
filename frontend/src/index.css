@@ -2438,3 +2438,78 @@ textarea:focus {
   font-size: 13px;
   color: #cbd5e1;
 }
+
+.admin-channel-image-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-channel-profile-preview {
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.24), transparent 42%),
+    rgba(255, 255, 255, 0.06);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+  font-weight: 900;
+}
+
+.admin-channel-profile-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-channel-banner-preview {
+  width: 92px;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-channel-banner-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 33px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-sub);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-file-button:hover {
+  color: var(--text-main);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.admin-file-button input {
+  display: none;
+}

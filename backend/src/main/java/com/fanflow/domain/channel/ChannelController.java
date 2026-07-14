@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
@@ -71,5 +73,21 @@ public class ChannelController {
 		channelService.deactivateChannel(channelId);
 
 		return ApiResponse.success("채널이 비활성화되었습니다.");
+	}
+
+	@PostMapping("/api/admin/channels/{channelId}/profile-image")
+	public ApiResponse<ChannelResponse> uploadProfileImage(@PathVariable Long channelId, @RequestParam("file") MultipartFile file) {
+
+		ChannelResponse response = channelService.uploadProfileImage(channelId, file);
+
+		return ApiResponse.success("채널 프로필 이미지가 업로드되었습니다.", response);
+	}
+
+	@PostMapping("/api/admin/channels/{channelId}/banner-image")
+	public ApiResponse<ChannelResponse> uploadBannerImage(@PathVariable Long channelId, @RequestParam("file") MultipartFile file) {
+
+		ChannelResponse response = channelService.uploadBannerImage(channelId, file);
+
+		return ApiResponse.success("채널 배너 이미지가 업로드되었습니다.", response);
 	}
 }

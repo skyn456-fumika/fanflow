@@ -4,11 +4,14 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.board.BoardService;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
+import com.fanflow.domain.image.ImageUploadService;
+import com.fanflow.domain.image.dto.ImageUploadResponse;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
 
@@ -22,6 +25,7 @@ public class ChannelService {
 	private final ChannelRepository channelRepository;
 
 	private final BoardService boardService;
+	private final ImageUploadService imageUploadService;
 
 	public List<ChannelResponse> getChannels() {
 		return channelRepository.findByActiveTrueOrderByNameAsc().stream().map(ChannelResponse::from).toList();
@@ -104,5 +108,39 @@ public class ChannelService {
 		}
 
 		return value.trim();
+	}
+
+	@Transactional
+	public ChannelResponse uploadProfileImage(Long channelId, MultipartFile file) {
+		Channel channel = channelRepository.findById(channelId).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		String oldImageUrl = channel.getProfileImageUrl();
+
+		ImageUploadResponse uploadResponse = imageUploadService.uploadChannelProfileImage(file);
+
+		channel.updateProfileImageUrl(uploadResponse.getImageUrl());
+
+		if (oldImageUrl != null && !oldImageUrl.equals(uploadResponse.getImageUrl())) {
+			imageUploadService.deleteImageByUrl(oldImageUrl);
+		}
+
+		return ChannelResponse.from(channel);
+	}
+
+	@Transactional
+	public ChannelResponse uploadBannerImage(Long channelId, MultipartFile file) {
+		Channel channel = channelRepository.findById(channelId).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		String oldImageUrl = channel.getBannerImageUrl();
+
+		ImageUploadResponse uploadResponse = imageUploadService.uploadChannelBannerImage(file);
+
+		channel.updateBannerImageUrl(uploadResponse.getImageUrl());
+
+		if (oldImageUrl != null && !oldImageUrl.equals(uploadResponse.getImageUrl())) {
+			imageUploadService.deleteImageByUrl(oldImageUrl);
+		}
+
+		return ChannelResponse.from(channel);
 	}
 }

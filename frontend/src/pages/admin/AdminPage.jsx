@@ -23,9 +23,19 @@ import {
   unblindComment,
   unblindPost,
   updateAdminChannel,
+  uploadAdminChannelProfileImage,
+  uploadAdminChannelBannerImage,
 } from '../../api/adminApi'
 import { getBoards } from '../../api/boardApi'
 import { getMyInfo } from '../../api/authApi'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+
+const getImageUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `${API_BASE_URL}${url}`
+}
 
 function AdminPage() {
   const location = useLocation()
@@ -999,6 +1009,60 @@ function AdminPage() {
     }
   }
 
+  const handleUploadChannelProfileImage = async (channelId, file) => {
+    if (!file) {
+      return
+    }
+
+    try {
+      const result = await uploadAdminChannelProfileImage(channelId, file)
+
+      if (result.success) {
+        alert('채널 프로필 이미지가 업로드되었습니다.')
+        await loadChannels()
+
+        if (editingChannelId === channelId) {
+          setChannelForm((prev) => ({
+            ...prev,
+            profileImageUrl: result.data.profileImageUrl || '',
+          }))
+        }
+      } else {
+        alert(result.message || '프로필 이미지 업로드에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '프로필 이미지 업로드에 실패했습니다.')
+    }
+  }
+
+  const handleUploadChannelBannerImage = async (channelId, file) => {
+    if (!file) {
+      return
+    }
+
+    try {
+      const result = await uploadAdminChannelBannerImage(channelId, file)
+
+      if (result.success) {
+        alert('채널 배너 이미지가 업로드되었습니다.')
+        await loadChannels()
+
+        if (editingChannelId === channelId) {
+          setChannelForm((prev) => ({
+            ...prev,
+            bannerImageUrl: result.data.bannerImageUrl || '',
+          }))
+        }
+      } else {
+        alert(result.message || '배너 이미지 업로드에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '배너 이미지 업로드에 실패했습니다.')
+    }
+  }
+
   const handleCommentBoardChange = (e) => {
     setCommentBoardCode(e.target.value)
     setCommentPage(0)
@@ -1776,6 +1840,7 @@ function AdminPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
+                    <th>이미지</th>
                     <th>채널명</th>
                     <th>주소</th>
                     <th>설명</th>
@@ -1788,12 +1853,31 @@ function AdminPage() {
                 <tbody>
                   {channels.length === 0 ? (
                     <tr>
-                      <td colSpan="7">채널이 없습니다.</td>
+                      <td colSpan="8">채널이 없습니다.</td>
                     </tr>
                   ) : (
                     channels.map((channel) => (
                       <tr key={channel.channelId}>
                         <td>{channel.channelId}</td>
+                        <td>
+                          <div className="admin-channel-image-cell">
+                            <div className="admin-channel-profile-preview">
+                              {channel.profileImageUrl ? (
+                                <img src={getImageUrl(channel.profileImageUrl)} alt={channel.name} />
+                              ) : (
+                                <span>{channel.name?.charAt(0) || '?'}</span>
+                              )}
+                            </div>
+
+                            <div className="admin-channel-banner-preview">
+                              {channel.bannerImageUrl ? (
+                                <img src={getImageUrl(channel.bannerImageUrl)} alt="" />
+                              ) : (
+                                <span>배너 없음</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                         <td>{channel.name}</td>
                         <td>{channel.slug}</td>
                         <td>{channel.description || '-'}</td>
@@ -1834,6 +1918,30 @@ function AdminPage() {
                                 활성화
                               </button>
                             )}
+
+                            <label className="admin-file-button">
+                              프로필 업로드
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  handleUploadChannelProfileImage(channel.channelId, e.target.files?.[0])
+                                  e.target.value = ''
+                                }}
+                              />
+                            </label>
+
+                            <label className="admin-file-button">
+                              배너 업로드
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  handleUploadChannelBannerImage(channel.channelId, e.target.files?.[0])
+                                  e.target.value = ''
+                                }}
+                              />
+                            </label>
 
                             <Link
                               to={`/channels/${channel.slug}`}

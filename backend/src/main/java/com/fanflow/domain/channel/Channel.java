@@ -66,4 +66,12 @@ public class Channel extends BaseEntity {
 	public void deactivate() {
 		this.active = false;
 	}
+
+	public void updateProfileImageUrl(String profileImageUrl) {
+		this.profileImageUrl = profileImageUrl;
+	}
+
+	public void updateBannerImageUrl(String bannerImageUrl) {
+		this.bannerImageUrl = bannerImageUrl;
+	}
 }

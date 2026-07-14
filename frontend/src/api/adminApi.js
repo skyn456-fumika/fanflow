@@ -254,3 +254,37 @@ export const deactivateAdminChannelBoard = async (channelId, boardId) => {
 
   return response.data
 }
+
+export const uploadAdminChannelProfileImage = async (channelId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await axiosInstance.post(
+    `/api/admin/channels/${channelId}/profile-image`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    },
+  )
+
+  return response.data
+}
+
+export const uploadAdminChannelBannerImage = async (channelId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await axiosInstance.post(
+    `/api/admin/channels/${channelId}/banner-image`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    },
+  )
+
+  return response.data
+}

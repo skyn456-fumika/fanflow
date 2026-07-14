@@ -124,4 +124,68 @@ public class ImageUploadService {
 			throw new BusinessException(ErrorCode.IMAGE_UPLOAD_FAILED);
 		}
 	}
+
+	private ImageUploadResponse uploadImage(MultipartFile file, String directory, String urlPrefix) {
+		validateImage(file);
+
+		String originalName = file.getOriginalFilename();
+		String extension = getExtension(originalName);
+		String storedName = UUID.randomUUID() + "." + extension;
+
+		try {
+			Path uploadPath = Paths.get(uploadDir, directory).toAbsolutePath().normalize();
+			Files.createDirectories(uploadPath);
+
+			Path targetPath = uploadPath.resolve(storedName).normalize();
+
+			if (!targetPath.startsWith(uploadPath)) {
+				throw new BusinessException(ErrorCode.IMAGE_UPLOAD_FAILED);
+			}
+
+			file.transferTo(targetPath.toFile());
+
+			String imageUrl = urlPrefix + storedName;
+
+			UploadedImage uploadedImage = UploadedImage.builder().originalName(originalName).storedName(storedName).imageUrl(imageUrl).build();
+
+			uploadedImageRepository.save(uploadedImage);
+
+			return ImageUploadResponse.builder().originalName(originalName).storedName(storedName).imageUrl(imageUrl).build();
+
+		} catch (IOException e) {
+			throw new BusinessException(ErrorCode.IMAGE_UPLOAD_FAILED);
+		}
+	}
+
+	public void deleteImageByUrl(String imageUrl) {
+		if (imageUrl == null || imageUrl.isBlank()) {
+			return;
+		}
+
+		if (!imageUrl.startsWith("/uploads/")) {
+			return;
+		}
+
+		try {
+			String relativePath = imageUrl.replaceFirst("^/uploads/", "");
+			Path uploadRootPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+			Path targetPath = uploadRootPath.resolve(relativePath).normalize();
+
+			if (!targetPath.startsWith(uploadRootPath)) {
+				return;
+			}
+
+			Files.deleteIfExists(targetPath);
+		} catch (IOException e) {
+			// 이미지 삭제 실패는 채널 수정 자체를 막지 않음
+		}
+	}
+
+	public ImageUploadResponse uploadChannelProfileImage(MultipartFile file) {
+		return uploadImage(file, "channels/profiles", "/uploads/channels/profiles/");
+	}
+
+	public ImageUploadResponse uploadChannelBannerImage(MultipartFile file) {
+		return uploadImage(file, "channels/banners", "/uploads/channels/banners/");
+	}
 }
