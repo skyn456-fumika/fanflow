@@ -60,4 +60,11 @@ public class NotificationController {
 
 		return ApiResponse.success("알림을 읽음 처리했습니다.");
 	}
+
+	@PatchMapping("/api/notifications/read-all")
+	public ApiResponse<Void> readAllNotifications(@CurrentUser CustomUserDetails userDetails) {
+		notificationService.readAllNotifications(userDetails.getUserId());
+
+		return ApiResponse.success("모든 알림을 읽음 처리했습니다.");
+	}
 }

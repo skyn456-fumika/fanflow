@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getNotifications,
+  readAllNotifications,
   readNotification,
 } from '../../api/notificationApi'
 
@@ -14,6 +15,12 @@ function NotificationPage() {
 
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+
+  const [readAllLoading, setReadAllLoading] = useState(false)
+
+  const hasUnreadNotification = notifications.some(
+    (notification) => !notification.readStatus,
+  )
 
   const loadNotifications = async () => {
     try {
@@ -75,6 +82,7 @@ function NotificationPage() {
     try {
       if (!notification.readStatus) {
         await readNotification(notification.notificationId)
+        window.dispatchEvent(new Event('notification-change'))
       }
 
       if (notification.targetPostId) {
@@ -97,6 +105,43 @@ function NotificationPage() {
     }
   }
 
+  const handleReadAll = async () => {
+    try {
+      setReadAllLoading(true)
+
+      const result = await readAllNotifications()
+
+      if (result.success) {
+        setNotifications((prev) =>
+          prev.map((notification) => ({
+            ...notification,
+            readStatus: true,
+          })),
+        )
+
+        window.dispatchEvent(new Event('notification-change'))
+      } else {
+        alert(result.message || '전체 읽음 처리에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+        navigate('/login', { replace: true })
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '전체 읽음 처리에 실패했습니다.',
+      )
+    } finally {
+      setReadAllLoading(false)
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -104,6 +149,20 @@ function NotificationPage() {
           <h1>알림</h1>
           <p>댓글, 운영 처리, 구독 채널의 새 글 알림을 확인합니다.</p>
         </div>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={handleReadAll}
+          disabled={
+            readAllLoading ||
+            loading ||
+            notifications.length === 0 ||
+            !hasUnreadNotification
+          }
+        >
+          {readAllLoading ? '처리 중...' : '전체 읽음'}
+        </button>
       </div>
 
       <div className="notification-section">

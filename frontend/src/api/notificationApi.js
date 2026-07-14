@@ -24,3 +24,9 @@ export const readNotification = async (notificationId) => {
 
   return response.data
 }
+
+export const readAllNotifications = async () => {
+  const response = await axiosInstance.patch('/api/notifications/read-all')
+
+  return response.data
+}

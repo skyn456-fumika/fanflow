@@ -78,6 +78,24 @@ function Header() {
     loadUnreadCount()
   }, [location.pathname])
 
+  useEffect(() => {
+    const handleNotificationChange = () => {
+      loadUnreadCount()
+    }
+
+    window.addEventListener(
+      'notification-change',
+      handleNotificationChange,
+    )
+
+    return () => {
+      window.removeEventListener(
+        'notification-change',
+        handleNotificationChange,
+      )
+    }
+  }, [])
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     window.dispatchEvent(new Event('auth-change'))

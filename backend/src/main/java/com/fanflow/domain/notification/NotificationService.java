@@ -93,6 +93,11 @@ public class NotificationService {
 		notification.read();
 	}
 
+	@Transactional
+	public void readAllNotifications(Long userId) {
+		notificationRepository.readAllByReceiverId(userId);
+	}
+
 	private NotificationResponse toResponse(Notification notification) {
 		Post post = null;
 
