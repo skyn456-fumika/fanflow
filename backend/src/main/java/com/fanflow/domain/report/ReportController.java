@@ -32,10 +32,10 @@ public class ReportController {
 	}
 
 	@GetMapping("/api/admin/reports")
-	public ApiResponse<PageResponse<ReportResponse>> getReports(@RequestParam(required = false) String status,
-			@RequestParam(required = false) String targetType, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size) {
-		PageResponse<ReportResponse> response = reportService.getReports(status, targetType, page, size);
+	public ApiResponse<PageResponse<ReportResponse>> getReports(@RequestParam(required = false) String channelSlug,
+			@RequestParam(required = false) String status, @RequestParam(required = false) String targetType,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+		PageResponse<ReportResponse> response = reportService.getReports(channelSlug, status, targetType, page, size);
 
 		return ApiResponse.success("관리자 신고 목록 조회에 성공했습니다.", response);
 	}

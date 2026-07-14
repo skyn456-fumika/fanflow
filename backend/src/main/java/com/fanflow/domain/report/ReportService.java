@@ -52,7 +52,7 @@ public class ReportService {
 		return toResponse(savedReport);
 	}
 
-	public PageResponse<ReportResponse> getReports(String status, String targetType, int page, int size) {
+	public PageResponse<ReportResponse> getReports(String channelSlug, String status, String targetType, int page, int size) {
 		if (page < 0) {
 			page = 0;
 		}
@@ -70,7 +70,8 @@ public class ReportService {
 
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
-		Page<ReportResponse> reports = reportRepository.searchReports(reportStatus, reportTargetType, pageable).map(this::toResponse);
+		Page<ReportResponse> reports = reportRepository.searchReports(normalize(channelSlug), reportStatus, reportTargetType, pageable)
+				.map(this::toResponse);
 
 		return PageResponse.from(reports);
 	}
@@ -139,23 +140,29 @@ public class ReportService {
 			Post post = postRepository.findById(report.getTargetId()).orElse(null);
 
 			if (post == null) {
-				return ReportResponse.from(report, null, "삭제된 게시글", "대상을 찾을 수 없습니다.");
+				return ReportResponse.from(report, null, "삭제된 게시글", "대상을 찾을 수 없습니다.", null, null, null, null, null, null);
 			}
 
-			return ReportResponse.from(report, post.getPostId(), post.getTitle(), createPreview(post.getContent()));
+			return ReportResponse.from(report, post.getPostId(), post.getTitle(), createPreview(post.getContent()),
+					post.getBoard().getChannel().getChannelId(), post.getBoard().getChannel().getName(), post.getBoard().getChannel().getSlug(),
+					post.getBoard().getBoardId(), post.getBoard().getCode(), post.getBoard().getName());
 		}
 
 		if (report.getTargetType() == ReportTargetType.COMMENT) {
 			Comment comment = commentRepository.findById(report.getTargetId()).orElse(null);
 
 			if (comment == null) {
-				return ReportResponse.from(report, null, "삭제된 댓글", "대상을 찾을 수 없습니다.");
+				return ReportResponse.from(report, null, "삭제된 댓글", "대상을 찾을 수 없습니다.", null, null, null, null, null, null);
 			}
 
-			return ReportResponse.from(report, comment.getPost().getPostId(), comment.getPost().getTitle(), createPreview(comment.getContent()));
+			Post post = comment.getPost();
+
+			return ReportResponse.from(report, post.getPostId(), post.getTitle(), createPreview(comment.getContent()),
+					post.getBoard().getChannel().getChannelId(), post.getBoard().getChannel().getName(), post.getBoard().getChannel().getSlug(),
+					post.getBoard().getBoardId(), post.getBoard().getCode(), post.getBoard().getName());
 		}
 
-		return ReportResponse.from(report, null, "-", "-");
+		return ReportResponse.from(report, null, "-", "-", null, null, null, null, null, null);
 	}
 
 	private String createPreview(String text) {
@@ -170,5 +177,13 @@ public class ReportService {
 		}
 
 		return plainText.substring(0, 60) + "...";
+	}
+
+	private String normalize(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+
+		return value.trim();
 	}
 }

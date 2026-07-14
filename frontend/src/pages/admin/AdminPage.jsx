@@ -74,6 +74,7 @@ function AdminPage() {
   const [reportTargetType, setReportTargetType] = useState('')
   const [reportPage, setReportPage] = useState(0)
   const [reportLoading, setReportLoading] = useState(false)
+  const [reportChannelSlug, setReportChannelSlug] = useState('')
 
   const [dashboard, setDashboard] = useState(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
@@ -302,6 +303,7 @@ function AdminPage() {
       setErrorMessage('')
 
       const result = await getAdminReports({
+        channelSlug: reportChannelSlug,
         status: reportStatus,
         targetType: reportTargetType,
         page: reportPage,
@@ -478,6 +480,10 @@ function AdminPage() {
     }
 
     if (activeAdminTab === 'reports') {
+      if (channels.length === 0) {
+        loadChannels()
+      }
+
       loadReports()
     }
 
@@ -495,6 +501,7 @@ function AdminPage() {
     commentChannelSlug,
     commentBoardCode,
     reportPage,
+    reportChannelSlug,
     reportStatus,
     reportTargetType,
   ])
@@ -726,6 +733,11 @@ function AdminPage() {
 
   const handleReportTargetTypeChange = (e) => {
     setReportTargetType(e.target.value)
+    setReportPage(0)
+  }
+
+  const handleReportChannelChange = (e) => {
+    setReportChannelSlug(e.target.value)
     setReportPage(0)
   }
 
@@ -1530,6 +1542,15 @@ function AdminPage() {
           <h2>신고 관리</h2>
 
           <div className="filter-box">
+            <select value={reportChannelSlug} onChange={handleReportChannelChange}>
+              <option value="">전체 채널</option>
+              {channels.map((channel) => (
+                <option key={channel.channelId} value={channel.slug}>
+                  {channel.name}
+                </option>
+              ))}
+            </select>
+
             <select value={reportStatus} onChange={handleReportStatusChange}>
               <option value="">전체 상태</option>
               <option value="PENDING">대기</option>
@@ -1553,6 +1574,8 @@ function AdminPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
+                    <th>채널</th>
+                    <th>게시판</th>
                     <th>대상</th>
                     <th>대상 정보</th>
                     <th>신고자</th>
@@ -1566,7 +1589,7 @@ function AdminPage() {
                 <tbody>
                   {reports.length === 0 ? (
                     <tr>
-                      <td colSpan="8">신고 내역이 없습니다.</td>
+                      <td colSpan="10">신고 내역이 없습니다.</td>
                     </tr>
                   ) : (
                     reports.map((report) => {
@@ -1575,6 +1598,8 @@ function AdminPage() {
                       return (
                         <tr key={report.reportId}>
                           <td>{report.reportId}</td>
+                          <td>{report.channelName || '-'}</td>
+                          <td>{report.boardName || '-'}</td>
                           <td>{report.targetType === 'POST' ? '게시글' : '댓글'}</td>
 
                           <td>

@@ -32,11 +32,20 @@ public class ReportResponse {
 	private String targetTitle;
 	private String targetPreview;
 
-	public static ReportResponse from(Report report, Long targetPostId, String targetTitle, String targetPreview) {
+	private Long channelId;
+	private String channelName;
+	private String channelSlug;
+
+	private Long boardId;
+	private String boardCode;
+	private String boardName;
+
+	public static ReportResponse from(Report report, Long targetPostId, String targetTitle, String targetPreview, Long channelId, String channelName,
+			String channelSlug, Long boardId, String boardCode, String boardName) {
 		return ReportResponse.builder().reportId(report.getReportId()).reporterId(report.getReporter().getUserId())
-				.reporterEmail(report.getReporter().getEmail()).reporterNickname(report.getReporter().getNickname())
-				.targetType(report.getTargetType()).targetId(report.getTargetId()).targetPostId(targetPostId).targetTitle(targetTitle)
-				.targetPreview(targetPreview).reason(report.getReason()).status(report.getStatus()).createdAt(report.getCreatedAt())
-				.updatedAt(report.getUpdatedAt()).build();
+				.reporterNickname(report.getReporter().getNickname()).targetType(report.getTargetType()).targetId(report.getTargetId())
+				.targetPostId(targetPostId).targetTitle(targetTitle).targetPreview(targetPreview).channelId(channelId).channelName(channelName)
+				.channelSlug(channelSlug).boardId(boardId).boardCode(boardCode).boardName(boardName).reason(report.getReason())
+				.status(report.getStatus()).createdAt(report.getCreatedAt()).updatedAt(report.getUpdatedAt()).build();
 	}
 }
