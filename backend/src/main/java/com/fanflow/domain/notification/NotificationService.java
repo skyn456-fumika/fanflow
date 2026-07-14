@@ -1,15 +1,20 @@
 package com.fanflow.domain.notification;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.channel.Channel;
+import com.fanflow.domain.channel.ChannelSubscriptionRepository;
 import com.fanflow.domain.notification.dto.NotificationResponse;
 import com.fanflow.domain.notification.dto.NotificationUnreadCountResponse;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.user.User;
+import com.fanflow.domain.user.UserStatus;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
 import com.fanflow.global.response.PageResponse;
@@ -23,6 +28,7 @@ public class NotificationService {
 
 	private final NotificationRepository notificationRepository;
 	private final PostRepository postRepository;
+	private final ChannelSubscriptionRepository channelSubscriptionRepository;
 
 	@Transactional
 	public void createCommentOnPostNotification(User receiver, Long postId, Long commentId, String commenterNickname) {
@@ -95,5 +101,28 @@ public class NotificationService {
 		}
 
 		return NotificationResponse.from(notification, post);
+	}
+
+	@Transactional
+	public void createSubscribedChannelNewPostNotifications(Post post) {
+		if (post == null || post.getWriter() == null || post.getBoard() == null || post.getBoard().getChannel() == null) {
+			return;
+		}
+
+		User writer = post.getWriter();
+		Channel channel = post.getBoard().getChannel();
+
+		List<User> receivers = channelSubscriptionRepository.findNotificationReceivers(channel.getChannelId(), writer.getUserId(), UserStatus.ACTIVE);
+
+		if (receivers.isEmpty()) {
+			return;
+		}
+
+		String message = channel.getName() + " 채널에 " + writer.getNickname() + "님이 새 게시글을 작성했습니다.";
+
+		List<Notification> notifications = receivers.stream().map(receiver -> Notification.builder().receiver(receiver)
+				.type(NotificationType.SUBSCRIBED_CHANNEL_NEW_POST).message(message).targetPostId(post.getPostId()).build()).toList();
+
+		notificationRepository.saveAll(notifications);
 	}
 }

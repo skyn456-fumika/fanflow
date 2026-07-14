@@ -64,6 +64,10 @@ function NotificationPage() {
       return '댓글 블라인드'
     }
 
+    if (type === 'SUBSCRIBED_CHANNEL_NEW_POST') {
+      return '구독 채널 새 글'
+    }
+
     return '알림'
   }
 
@@ -98,7 +102,7 @@ function NotificationPage() {
       <div className="page-title-row">
         <div>
           <h1>알림</h1>
-          <p>내 게시글과 댓글에 대한 알림을 확인합니다.</p>
+          <p>댓글, 운영 처리, 구독 채널의 새 글 알림을 확인합니다.</p>
         </div>
       </div>
 

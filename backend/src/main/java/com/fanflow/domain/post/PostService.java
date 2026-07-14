@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fanflow.domain.board.Board;
 import com.fanflow.domain.board.BoardRepository;
 import com.fanflow.domain.image.ImageFileService;
+import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.dto.PostCreateRequest;
 import com.fanflow.domain.post.dto.PostListResponse;
 import com.fanflow.domain.post.dto.PostResponse;
@@ -36,6 +37,7 @@ public class PostService {
 
 	private final HtmlSanitizer htmlSanitizer;
 	private final ImageFileService imageFileService;
+	private final NotificationService notificationService;
 
 	private static final String DEFAULT_CHANNEL_SLUG = "fumika";
 
@@ -74,6 +76,8 @@ public class PostService {
 		Post savedPost = postRepository.save(post);
 
 		imageFileService.markImagesAsUsedFromHtml(sanitizedContent);
+
+		notificationService.createSubscribedChannelNewPostNotifications(savedPost);
 
 		return PostResponse.from(savedPost);
 	}
