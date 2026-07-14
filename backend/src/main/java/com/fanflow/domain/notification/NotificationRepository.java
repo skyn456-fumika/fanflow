@@ -21,4 +21,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 			  AND n.readStatus = false
 			""")
 	int readAllByReceiverId(@Param("receiverId") Long receiverId);
+
+	@Modifying(clearAutomatically = true)
+	@Query("""
+			DELETE FROM Notification n
+			WHERE n.receiver.userId = :receiverId
+			  AND n.readStatus = true
+			""")
+	int deleteReadByReceiverId(@Param("receiverId") Long receiverId);
 }

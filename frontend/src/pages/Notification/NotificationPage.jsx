@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   deleteNotification,
+  deleteReadNotifications,
   getNotifications,
   readAllNotifications,
   readNotification,
@@ -15,13 +16,17 @@ function NotificationPage() {
   const [page, setPage] = useState(0)
 
   const [loading, setLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-
   const [readAllLoading, setReadAllLoading] = useState(false)
   const [deletingNotificationId, setDeletingNotificationId] = useState(null)
+  const [deleteReadLoading, setDeleteReadLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const hasUnreadNotification = notifications.some(
     (notification) => !notification.readStatus,
+  )
+
+  const hasReadNotification = notifications.some(
+    (notification) => notification.readStatus,
   )
 
   const loadNotifications = async () => {
@@ -186,6 +191,50 @@ function NotificationPage() {
     }
   }
 
+  const handleDeleteReadNotifications = async () => {
+    if (!window.confirm('읽은 알림을 모두 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      setDeleteReadLoading(true)
+
+      const result = await deleteReadNotifications()
+
+      if (!result.success) {
+        alert(result.message || '읽은 알림 삭제에 실패했습니다.')
+        return
+      }
+
+      const remainingNotifications = notifications.filter(
+        (notification) => !notification.readStatus,
+      )
+
+      if (remainingNotifications.length === 0 && page > 0) {
+        setPage((prev) => prev - 1)
+        return
+      }
+
+      await loadNotifications()
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+        navigate('/login', { replace: true })
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '읽은 알림 삭제에 실패했습니다.',
+      )
+    } finally {
+      setDeleteReadLoading(false)
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -194,19 +243,37 @@ function NotificationPage() {
           <p>댓글, 운영 처리, 구독 채널의 새 글 알림을 확인합니다.</p>
         </div>
 
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={handleReadAll}
-          disabled={
-            readAllLoading ||
-            loading ||
-            notifications.length === 0 ||
-            !hasUnreadNotification
-          }
-        >
-          {readAllLoading ? '처리 중...' : '전체 읽음'}
-        </button>
+        <div className="notification-page-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleReadAll}
+            disabled={
+              readAllLoading ||
+              deleteReadLoading ||
+              loading ||
+              notifications.length === 0 ||
+              !hasUnreadNotification
+            }
+          >
+            {readAllLoading ? '처리 중...' : '전체 읽음'}
+          </button>
+
+          <button
+            type="button"
+            className="danger-button"
+            onClick={handleDeleteReadNotifications}
+            disabled={
+              deleteReadLoading ||
+              readAllLoading ||
+              loading ||
+              notifications.length === 0 ||
+              !hasReadNotification
+            }
+          >
+            {deleteReadLoading ? '삭제 중...' : '읽은 알림 삭제'}
+          </button>
+        </div>
       </div>
 
       <div className="notification-section">

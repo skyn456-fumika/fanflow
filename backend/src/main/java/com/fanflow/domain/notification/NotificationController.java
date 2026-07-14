@@ -69,6 +69,13 @@ public class NotificationController {
 		return ApiResponse.success("모든 알림을 읽음 처리했습니다.");
 	}
 
+	@DeleteMapping("/api/notifications/read")
+	public ApiResponse<Void> deleteReadNotifications(@CurrentUser CustomUserDetails userDetails) {
+		notificationService.deleteReadNotifications(userDetails.getUserId());
+
+		return ApiResponse.success("읽은 알림을 모두 삭제했습니다.");
+	}
+
 	@DeleteMapping("/api/notifications/{notificationId}")
 	public ApiResponse<Void> deleteNotification(@PathVariable Long notificationId, @CurrentUser CustomUserDetails userDetails) {
 		notificationService.deleteNotification(notificationId, userDetails.getUserId());

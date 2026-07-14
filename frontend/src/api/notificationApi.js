@@ -38,3 +38,9 @@ export const deleteNotification = async (notificationId) => {
 
   return response.data
 }
+
+export const deleteReadNotifications = async () => {
+  const response = await axiosInstance.delete('/api/notifications/read')
+
+  return response.data
+}

@@ -2659,3 +2659,29 @@ textarea:focus {
   cursor: default;
   opacity: 0.5;
 }
+
+.notification-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .notification-page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+.danger-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.danger-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}

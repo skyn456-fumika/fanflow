@@ -142,4 +142,9 @@ public class NotificationService {
 
 		notificationRepository.saveAll(notifications);
 	}
+
+	@Transactional
+	public void deleteReadNotifications(Long userId) {
+		notificationRepository.deleteReadByReceiverId(userId);
+	}
 }
