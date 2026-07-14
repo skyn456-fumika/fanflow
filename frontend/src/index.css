@@ -2513,3 +2513,7 @@ textarea:focus {
 .admin-file-button input {
   display: none;
 }
+
+.channel-home-page .home-grid {
+  align-items: start;
+}

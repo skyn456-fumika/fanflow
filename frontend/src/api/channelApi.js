@@ -11,3 +11,9 @@ export const getChannel = async (channelSlug) => {
 
   return response.data
 }
+
+export const getChannelHome = async (channelSlug) => {
+  const response = await axiosInstance.get(`/api/channels/${channelSlug}/home`)
+
+  return response.data
+}

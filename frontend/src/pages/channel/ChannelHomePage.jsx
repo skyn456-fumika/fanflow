@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { getChannel } from '../../api/channelApi'
-import { getChannelBoards } from '../../api/boardApi'
-import { getChannelPosts } from '../../api/postApi'
+import { getChannelHome } from '../../api/channelApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -12,12 +10,76 @@ const getImageUrl = (url) => {
   return `${API_BASE_URL}${url}`
 }
 
+function ChannelHomePostCard({ post }) {
+  return (
+    <Link
+      key={post.postId}
+      to={`/posts/${post.postId}`}
+      className="home-post-card"
+    >
+      {post.thumbnailUrl && (
+        <div className="home-post-thumbnail">
+          <img src={getImageUrl(post.thumbnailUrl)} alt="" />
+        </div>
+      )}
+
+      <div className="home-post-card-top">
+        <div className="post-path">
+          <span className="post-path-board">{post.boardName}</span>
+        </div>
+
+        {post.notice && <span className="notice-badge">공지</span>}
+      </div>
+
+      <strong>{post.title}</strong>
+
+      <div className="post-meta">
+        <span>{post.writerNickname}</span>
+        <span>조회 {post.viewCount}</span>
+        <span>좋아요 {post.likeCount}</span>
+        <span>댓글 {post.commentCount}</span>
+      </div>
+    </Link>
+  )
+}
+
+function ChannelHomePostSection({ title, description, posts, emptyText, moreLink }) {
+  return (
+    <section className="home-section">
+      <div className="home-section-title">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+
+        {moreLink && (
+          <Link to={moreLink} className="secondary-button">
+            더보기
+          </Link>
+        )}
+      </div>
+
+      {posts.length === 0 ? (
+        <div className="empty-box">{emptyText}</div>
+      ) : (
+        <div className="home-post-list">
+          {posts.map((post) => (
+            <ChannelHomePostCard key={post.postId} post={post} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function ChannelHomePage() {
   const { channelSlug } = useParams()
   const navigate = useNavigate()
 
   const [channel, setChannel] = useState(null)
   const [boards, setBoards] = useState([])
+  const [noticePosts, setNoticePosts] = useState([])
+  const [popularPosts, setPopularPosts] = useState([])
   const [recentPosts, setRecentPosts] = useState([])
 
   const [loading, setLoading] = useState(false)
@@ -28,30 +90,18 @@ function ChannelHomePage() {
       setLoading(true)
       setErrorMessage('')
 
-      const [channelResult, boardsResult, postsResult] = await Promise.all([
-        getChannel(channelSlug),
-        getChannelBoards(channelSlug),
-        getChannelPosts({
-          channelSlug,
-          page: 0,
-          size: 6,
-        }),
-      ])
+      const result = await getChannelHome(channelSlug)
 
-      if (!channelResult.success) {
-        setErrorMessage(channelResult.message || '채널 정보를 불러오지 못했습니다.')
+      if (!result.success) {
+        setErrorMessage(result.message || '채널 홈을 불러오지 못했습니다.')
         return
       }
 
-      setChannel(channelResult.data)
-
-      if (boardsResult.success) {
-        setBoards(boardsResult.data)
-      }
-
-      if (postsResult.success) {
-        setRecentPosts(postsResult.data.content)
-      }
+      setChannel(result.data.channel)
+      setBoards(result.data.boards || [])
+      setNoticePosts(result.data.noticePosts || [])
+      setPopularPosts(result.data.popularPosts || [])
+      setRecentPosts(result.data.recentPosts || [])
     } catch (error) {
       console.error(error)
 
@@ -156,55 +206,31 @@ function ChannelHomePage() {
         )}
       </section>
 
-      <section className="home-section">
-        <div className="home-section-title">
-          <div>
-            <h2>최근 게시글</h2>
-            <p>이 채널에 최근 올라온 팬들의 이야기입니다.</p>
-          </div>
+      <ChannelHomePostSection
+        title="공지사항"
+        description="이 채널에서 꼭 확인해야 할 공지입니다."
+        posts={noticePosts}
+        emptyText="등록된 공지사항이 없습니다."
+        moreLink={`/channels/${channel.slug}/posts?boardCode=NOTICE`}
+      />
 
-          <Link
-            to={`/channels/${channel.slug}/posts`}
-            className="secondary-button"
-          >
-            더보기
-          </Link>
-        </div>
+      <div className="home-grid">
+        <ChannelHomePostSection
+          title="인기글"
+          description="팬들이 많이 반응한 글입니다."
+          posts={popularPosts}
+          emptyText="아직 인기글이 없습니다."
+          moreLink={`/channels/${channel.slug}/posts`}
+        />
 
-        {recentPosts.length === 0 ? (
-          <div className="empty-box">아직 게시글이 없습니다.</div>
-        ) : (
-          <div className="home-post-list">
-            {recentPosts.map((post) => (
-              <Link
-                key={post.postId}
-                to={`/posts/${post.postId}`}
-                className="home-post-card"
-              >
-                {post.thumbnailUrl && (
-                  <div className="home-post-thumbnail">
-                    <img src={getImageUrl(post.thumbnailUrl)} alt="" />
-                  </div>
-                )}
-
-                <div className="home-post-card-top">
-                  <span className="board-badge">{post.boardName}</span>
-                  {post.notice && <span className="notice-badge">공지</span>}
-                </div>
-
-                <strong>{post.title}</strong>
-
-                <div className="post-meta">
-                  <span>{post.writerNickname}</span>
-                  <span>조회 {post.viewCount}</span>
-                  <span>좋아요 {post.likeCount}</span>
-                  <span>댓글 {post.commentCount}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+        <ChannelHomePostSection
+          title="최신글"
+          description="최근 올라온 팬들의 이야기입니다."
+          posts={recentPosts}
+          emptyText="아직 게시글이 없습니다."
+          moreLink={`/channels/${channel.slug}/posts`}
+        />
+      </div>
     </div>
   )
 }

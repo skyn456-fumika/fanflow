@@ -2,16 +2,22 @@ package com.fanflow.domain.channel;
 
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fanflow.domain.board.BoardRepository;
 import com.fanflow.domain.board.BoardService;
+import com.fanflow.domain.board.dto.BoardResponse;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
+import com.fanflow.domain.channel.dto.ChannelHomeResponse;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
 import com.fanflow.domain.image.ImageUploadService;
 import com.fanflow.domain.image.dto.ImageUploadResponse;
+import com.fanflow.domain.post.PostRepository;
+import com.fanflow.domain.post.dto.PostListResponse;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
 
@@ -23,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 public class ChannelService {
 
 	private final ChannelRepository channelRepository;
+	private final BoardRepository boardRepository;
+	private final PostRepository postRepository;
 
 	private final BoardService boardService;
 	private final ImageUploadService imageUploadService;
@@ -39,6 +47,28 @@ public class ChannelService {
 		}
 
 		return ChannelResponse.from(channel);
+	}
+
+	public ChannelHomeResponse getChannelHome(String slug) {
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		if (!channel.isActive()) {
+			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
+		}
+
+		List<BoardResponse> boards = boardRepository.findActiveBoardsByChannelSlug(slug).stream().map(BoardResponse::from).toList();
+
+		List<PostListResponse> noticePosts = postRepository.findChannelHomeNoticePosts(slug, PageRequest.of(0, 3)).stream()
+				.map(PostListResponse::from).toList();
+
+		List<PostListResponse> popularPosts = postRepository.findChannelHomePopularPosts(slug, PageRequest.of(0, 5)).stream()
+				.map(PostListResponse::from).toList();
+
+		List<PostListResponse> recentPosts = postRepository.findChannelHomeRecentPosts(slug, PageRequest.of(0, 5)).stream()
+				.map(PostListResponse::from).toList();
+
+		return ChannelHomeResponse.builder().channel(ChannelResponse.from(channel)).boards(boards).noticePosts(noticePosts).popularPosts(popularPosts)
+				.recentPosts(recentPosts).build();
 	}
 
 	public List<ChannelResponse> getAdminChannels() {

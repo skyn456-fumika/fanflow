@@ -212,4 +212,54 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			WHERE p.postId = :postId
 			""")
 	Optional<Post> findDetailById(@Param("postId") Long postId);
+
+	@Query("""
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE c.slug = :channelSlug
+			  AND c.active = true
+			  AND b.active = true
+			  AND p.deleted = false
+			  AND p.blind = false
+			  AND p.notice = true
+			ORDER BY p.createdAt DESC
+			""")
+	List<Post> findChannelHomeNoticePosts(@Param("channelSlug") String channelSlug, Pageable pageable);
+
+	@Query("""
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE c.slug = :channelSlug
+			  AND c.active = true
+			  AND b.active = true
+			  AND p.deleted = false
+			  AND p.blind = false
+			  AND (
+			       p.likeCount > 0
+			       OR p.viewCount >= 10
+			  )
+			ORDER BY p.likeCount DESC, p.viewCount DESC, p.createdAt DESC
+			""")
+	List<Post> findChannelHomePopularPosts(@Param("channelSlug") String channelSlug, Pageable pageable);
+
+	@Query("""
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE c.slug = :channelSlug
+			  AND c.active = true
+			  AND b.active = true
+			  AND p.deleted = false
+			  AND p.blind = false
+			ORDER BY p.createdAt DESC
+			""")
+	List<Post> findChannelHomeRecentPosts(@Param("channelSlug") String channelSlug, Pageable pageable);
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
+import com.fanflow.domain.channel.dto.ChannelHomeResponse;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
 import com.fanflow.global.response.ApiResponse;
@@ -38,6 +39,13 @@ public class ChannelController {
 		ChannelResponse response = channelService.getChannel(slug);
 
 		return ApiResponse.success("채널 조회에 성공했습니다.", response);
+	}
+
+	@GetMapping("/api/channels/{slug}/home")
+	public ApiResponse<ChannelHomeResponse> getChannelHome(@PathVariable String slug) {
+		ChannelHomeResponse response = channelService.getChannelHome(slug);
+
+		return ApiResponse.success("채널 홈 조회에 성공했습니다.", response);
 	}
 
 	@GetMapping("/api/admin/channels")
