@@ -24,9 +24,13 @@ function PostWritePage() {
   const DEFAULT_CHANNEL_SLUG = 'fumika'
   const currentChannelSlug = channelSlug || DEFAULT_CHANNEL_SLUG
 
-  const postListPath = channelSlug
-    ? `/channels/${currentChannelSlug}/posts`
-    : '/posts'
+  const [loadedPost, setLoadedPost] = useState(null)
+
+  const postListPath = loadedPost?.channelSlug
+    ? `/channels/${loadedPost.channelSlug}/posts?boardCode=${loadedPost.boardCode}`
+    : channelSlug
+      ? `/channels/${currentChannelSlug}/posts`
+      : '/posts'
 
   const alertShownRef = useRef(false)
   const contentRef = useRef('')
@@ -99,6 +103,7 @@ function PostWritePage() {
       const postData = postResult.data
       const meData = myInfoResult.data
 
+      setLoadedPost(postData)
       setMe(meData)
 
       if (postData.writerId !== meData.userId) {
@@ -114,6 +119,14 @@ function PostWritePage() {
         title: postData.title,
         content: postData.content || '',
       })
+
+      if (postData.channelSlug) {
+        const boardResult = await getChannelBoards(postData.channelSlug)
+
+        if (boardResult.success) {
+          setBoards(boardResult.data)
+        }
+      }
 
       setEditorReady(true)
     } catch (error) {
@@ -282,6 +295,20 @@ function PostWritePage() {
         </Link>
       </div>
 
+      {loadedPost?.channelSlug && (
+        <div className="post-breadcrumb">
+          <Link to={`/channels/${loadedPost.channelSlug}`}>
+            {loadedPost.channelName || '채널'}
+          </Link>
+
+          <span>&gt;</span>
+
+          <Link to={`/channels/${loadedPost.channelSlug}/posts?boardCode=${loadedPost.boardCode}`}>
+            {loadedPost.boardName || '게시판'}
+          </Link>
+        </div>
+      )}
+
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
       <div className="write-box">
@@ -300,7 +327,7 @@ function PostWritePage() {
               ) : (
                 boards.map((board) => (
                   <option key={board.boardId} value={board.code}>
-                    {board.name}
+                    {board.channelName ? `${board.channelName} - ${board.name}` : board.name}
                   </option>
                 ))
               )}
