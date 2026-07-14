@@ -2304,3 +2304,45 @@ textarea:focus {
 .post-breadcrumb span {
   opacity: 0.6;
 }
+
+.home-post-card {
+  display: block;
+}
+
+.home-post-card a {
+  color: inherit;
+}
+
+.home-post-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.home-post-path a {
+  text-decoration: none;
+}
+
+.home-post-path a:hover {
+  text-decoration: underline;
+}
+
+.home-post-path span {
+  opacity: 0.6;
+}
+
+.home-post-title-link {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.home-post-title-link:hover {
+  text-decoration: underline;
+}
+
+.home-post-thumbnail {
+  display: block;
+}

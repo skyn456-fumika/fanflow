@@ -90,6 +90,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
@@ -102,6 +103,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
@@ -117,6 +119,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
@@ -128,6 +131,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT p
 			FROM Post p
 			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
 			JOIN FETCH p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false

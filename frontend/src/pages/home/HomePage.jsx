@@ -11,20 +11,41 @@ const getImageUrl = (url) => {
 }
 
 function HomePostCard({ post }) {
+  const channelPath = post.channelSlug
+    ? `/channels/${post.channelSlug}`
+    : '/channels'
+
+  const boardPath = post.channelSlug
+    ? `/channels/${post.channelSlug}/posts?boardCode=${post.boardCode}`
+    : '/posts'
+
   return (
-    <Link to={`/posts/${post.postId}`} className="home-post-card">
+    <article className="home-post-card">
       {post.thumbnailUrl && (
-        <div className="home-post-thumbnail">
+        <Link to={`/posts/${post.postId}`} className="home-post-thumbnail">
           <img src={getImageUrl(post.thumbnailUrl)} alt="" />
-        </div>
+        </Link>
       )}
 
       <div className="home-post-card-top">
-        <span className="board-badge">{post.boardName}</span>
+        <div className="home-post-path">
+          <Link to={channelPath}>
+            {post.channelName || '채널'}
+          </Link>
+
+          <span>&gt;</span>
+
+          <Link to={boardPath}>
+            {post.boardName}
+          </Link>
+        </div>
+
         {post.notice && <span className="notice-badge">공지</span>}
       </div>
 
-      <strong>{post.title}</strong>
+      <Link to={`/posts/${post.postId}`} className="home-post-title-link">
+        <strong>{post.title}</strong>
+      </Link>
 
       <div className="post-meta">
         <span>{post.writerNickname}</span>
@@ -32,7 +53,7 @@ function HomePostCard({ post }) {
         <span>좋아요 {post.likeCount}</span>
         <span>댓글 {post.commentCount}</span>
       </div>
-    </Link>
+    </article>
   )
 }
 
@@ -115,10 +136,6 @@ function HomePage() {
           <div className="home-hero-actions">
             <Link to="/channels" className="primary-button">
               채널 둘러보기
-            </Link>
-
-            <Link to="/channels/fumika" className="secondary-button">
-              기본 채널
             </Link>
           </div>
         </div>
