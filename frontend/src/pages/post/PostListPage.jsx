@@ -38,6 +38,24 @@ function PostListPage() {
     return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`
   }
 
+  const renderPostPath = (post) => (
+    <div className="post-path">
+      {post.channelName && (
+        <>
+          <span className="post-path-channel">
+            {post.channelName}
+          </span>
+
+          <span className="post-path-separator">&gt;</span>
+        </>
+      )}
+
+      <span className="post-path-board">
+        {post.boardName}
+      </span>
+    </div>
+  )
+
   const loadBoards = async () => {
     try {
       const result = channelSlug
@@ -147,7 +165,11 @@ function PostListPage() {
       <div className="page-title-row">
         <div>
           <h1>게시글 목록</h1>
-          <p>FanFlow 커뮤니티 게시글입니다.</p>
+          <p>
+            {channelSlug
+              ? '선택한 채널의 게시글을 확인합니다.'
+              : '전체 채널의 게시글을 확인합니다.'}
+          </p>
         </div>
 
         <Link to={channelSlug ? `/channels/${currentChannelSlug}/posts/write` : '/posts/write'} className="primary-button">
@@ -202,7 +224,7 @@ function PostListPage() {
 
               <div className="gallery-post-body">
                 <div className="home-post-card-top">
-                  <span className="board-badge">{post.boardName}</span>
+                  {renderPostPath(post)}
                   {post.notice && <span className="notice-badge">공지</span>}
                 </div>
 
@@ -234,9 +256,14 @@ function PostListPage() {
 
               <div>
                 <div className="post-main">
-                  <span className="board-badge">{post.boardName}</span>
-                  {post.notice && <span className="notice-badge">공지</span>}
-                  <strong>{post.title}</strong>
+                  <div className="post-title-block">
+                    <div className="post-title-top">
+                      {renderPostPath(post)}
+                      {post.notice && <span className="notice-badge">공지</span>}
+                    </div>
+
+                    <strong>{post.title}</strong>
+                  </div>
                 </div>
 
                 <div className="post-meta">

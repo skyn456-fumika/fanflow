@@ -341,7 +341,11 @@ function PostDetailPage() {
       <div className="page-title-row">
         <div>
           <h1>{post.title}</h1>
-          <p>게시글 상세 페이지입니다.</p>
+          <p>
+            {post.channelName
+              ? `${post.channelName} 채널의 게시글입니다.`
+              : '게시글 상세 페이지입니다.'}
+          </p>
         </div>
 
         <Link to={listPath} className="secondary-button">

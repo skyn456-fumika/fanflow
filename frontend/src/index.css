@@ -2367,3 +2367,74 @@ textarea:focus {
   font-size: 13px;
   color: #cbd5e1;
 }
+
+.post-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.post-title-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.post-path,
+.home-post-path,
+.post-breadcrumb,
+.notification-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.post-path,
+.home-post-path {
+  color: #93c5fd;
+}
+
+.post-path-channel,
+.home-post-path a:first-child,
+.post-breadcrumb a:first-child,
+.notification-path span:first-child {
+  color: #93c5fd;
+}
+
+.post-path-board,
+.home-post-path a:last-child,
+.post-breadcrumb a:last-child,
+.notification-path span:last-child {
+  color: #c4b5fd;
+}
+
+.post-path-separator,
+.home-post-path span,
+.post-breadcrumb span,
+.notification-path span:nth-child(2) {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.home-post-path a,
+.post-breadcrumb a {
+  text-decoration: none;
+}
+
+.home-post-path a:hover,
+.post-breadcrumb a:hover {
+  color: var(--text-main);
+  text-decoration: underline;
+}
+
+.notification-target-title {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #cbd5e1;
+}
