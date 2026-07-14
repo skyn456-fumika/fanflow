@@ -277,6 +277,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND b.active = true
 			  AND (:channelSlug IS NULL OR c.slug = :channelSlug)
 			  AND (:boardCode IS NULL OR b.code = :boardCode)
+			  AND (
+			        :keyword IS NULL
+			        OR p.title LIKE CONCAT('%', :keyword, '%')
+			        OR p.content LIKE CONCAT('%', :keyword, '%')
+			      )
 			  AND EXISTS (
 			      SELECT 1
 			      FROM ChannelSubscription cs
@@ -294,6 +299,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND b.active = true
 			  AND (:channelSlug IS NULL OR c.slug = :channelSlug)
 			  AND (:boardCode IS NULL OR b.code = :boardCode)
+			  AND (
+			        :keyword IS NULL
+			        OR p.title LIKE CONCAT('%', :keyword, '%')
+			        OR p.content LIKE CONCAT('%', :keyword, '%')
+			      )
 			  AND EXISTS (
 			      SELECT 1
 			      FROM ChannelSubscription cs
@@ -302,5 +312,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  )
 			""")
 	Page<Post> findSubscriptionFeedPosts(@Param("userId") Long userId, @Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode,
-			Pageable pageable);
+			@Param("keyword") String keyword, Pageable pageable);
 }

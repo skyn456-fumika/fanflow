@@ -92,6 +92,10 @@ function FeedPage() {
   const [boardCode, setBoardCode] = useState(initialBoardCode)
   const [boardLoading, setBoardLoading] = useState(false)
 
+  const initialKeyword = searchParams.get('keyword') || ''
+  const [keyword, setKeyword] = useState(initialKeyword)
+  const [keywordInput, setKeywordInput] = useState(initialKeyword)
+
   const requireLogin = () => {
     localStorage.removeItem('accessToken')
 
@@ -142,6 +146,7 @@ function FeedPage() {
         size: 10,
         channelSlug,
         boardCode,
+        keyword,
         sort,
       })
 
@@ -194,6 +199,7 @@ function FeedPage() {
               nextPage: 0,
               nextChannelSlug: selectedChannelSlug,
               nextBoardCode: '',
+              nextKeyword: keyword,
               nextSort: sort,
             }),
             {
@@ -218,6 +224,7 @@ function FeedPage() {
     nextPage = page,
     nextChannelSlug = channelSlug,
     nextBoardCode = boardCode,
+    nextKeyword = keyword,
     nextSort = sort,
   }) => {
     const params = new URLSearchParams()
@@ -232,6 +239,10 @@ function FeedPage() {
 
     if (nextChannelSlug && nextBoardCode) {
       params.set('boardCode', nextBoardCode)
+    }
+
+    if (nextKeyword) {
+      params.set('keyword', nextKeyword)
     }
 
     if (nextSort !== 'latest') {
@@ -267,6 +278,8 @@ function FeedPage() {
       ? searchParams.get('boardCode') || ''
       : ''
 
+    const nextKeyword = searchParams.get('keyword') || ''
+
     const nextSort =
       searchParams.get('sort') === 'popular'
         ? 'popular'
@@ -275,12 +288,14 @@ function FeedPage() {
     setPage(nextPage)
     setChannelSlug(nextChannelSlug)
     setBoardCode(nextBoardCode)
+    setKeyword(nextKeyword)
+    setKeywordInput(nextKeyword)
     setSort(nextSort)
   }, [searchParams])
 
   useEffect(() => {
     loadFeed()
-  }, [page, channelSlug, boardCode, sort])
+  }, [page, channelSlug, boardCode, keyword, sort])
 
   const handleChannelChange = (e) => {
     const nextChannelSlug = e.target.value
@@ -290,6 +305,7 @@ function FeedPage() {
         nextPage: 0,
         nextChannelSlug,
         nextBoardCode: '',
+        nextKeyword: keyword,
         nextSort: sort,
       }),
     )
@@ -303,6 +319,7 @@ function FeedPage() {
         nextPage: 0,
         nextChannelSlug: channelSlug,
         nextBoardCode: boardCode,
+        nextKeyword: keyword,
         nextSort,
       }),
     )
@@ -316,6 +333,7 @@ function FeedPage() {
         nextPage,
         nextChannelSlug: channelSlug,
         nextBoardCode: boardCode,
+        nextKeyword: keyword,
         nextSort: sort,
       }),
     )
@@ -329,6 +347,7 @@ function FeedPage() {
         nextPage,
         nextChannelSlug: channelSlug,
         nextBoardCode: boardCode,
+        nextKeyword: keyword,
         nextSort: sort,
       }),
     )
@@ -342,6 +361,37 @@ function FeedPage() {
         nextPage: 0,
         nextChannelSlug: channelSlug,
         nextBoardCode,
+        nextKeyword: keyword,
+        nextSort: sort,
+      }),
+    )
+  }
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault()
+
+    const nextKeyword = keywordInput.trim()
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage: 0,
+        nextChannelSlug: channelSlug,
+        nextBoardCode: boardCode,
+        nextKeyword,
+        nextSort: sort,
+      }),
+    )
+  }
+
+  const handleSearchReset = () => {
+    setKeywordInput('')
+
+    setSearchParams(
+      createFeedSearchParams({
+        nextPage: 0,
+        nextChannelSlug: channelSlug,
+        nextBoardCode: boardCode,
+        nextKeyword: '',
         nextSort: sort,
       }),
     )
@@ -417,17 +467,42 @@ function FeedPage() {
         </div>
       </div>
 
+      <form className="feed-search-form" onSubmit={handleSearchSubmit}>
+        <input
+          type="search"
+          value={keywordInput}
+          onChange={(e) => setKeywordInput(e.target.value)}
+          placeholder="구독 피드에서 제목이나 내용을 검색하세요."
+        />
+
+        <button type="submit" className="primary-button">
+          검색
+        </button>
+
+        {keyword && (
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleSearchReset}
+          >
+            초기화
+          </button>
+        )}
+      </form>
+
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
       {loading ? (
         <p>불러오는 중...</p>
       ) : posts.length === 0 ? (
         <div className="empty-box">
-          {boardCode
-            ? '선택한 게시판에 표시할 게시글이 없습니다.'
-            : channelSlug
-              ? '선택한 채널에 표시할 게시글이 없습니다.'
-              : '구독한 채널의 게시글이 없습니다. 관심 있는 채널을 구독해보세요.'}
+          {keyword
+            ? `"${keyword}" 검색 결과가 없습니다.`
+            : boardCode
+              ? '선택한 게시판에 표시할 게시글이 없습니다.'
+              : channelSlug
+                ? '선택한 채널에 표시할 게시글이 없습니다.'
+                : '구독한 채널의 게시글이 없습니다. 관심 있는 채널을 구독해보세요.'}
         </div>
       ) : (
         <div className="feed-post-list">

@@ -2744,3 +2744,36 @@ textarea:focus {
     min-width: 0;
   }
 }
+
+.feed-search-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.feed-search-form input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-main);
+  background: rgba(7, 12, 26, 0.72);
+}
+
+.feed-search-form input::placeholder {
+  color: var(--text-muted);
+}
+
+@media (max-width: 560px) {
+  .feed-search-form {
+    flex-direction: column;
+  }
+
+  .feed-search-form .primary-button,
+  .feed-search-form .secondary-button {
+    width: 100%;
+  }
+}

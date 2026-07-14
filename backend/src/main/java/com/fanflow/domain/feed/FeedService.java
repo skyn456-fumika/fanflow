@@ -20,13 +20,16 @@ public class FeedService {
 
 	private final PostRepository postRepository;
 
-	public PageResponse<PostListResponse> getSubscriptionFeed(Long userId, String channelSlug, String boardCode, String sort, int page, int size) {
+	public PageResponse<PostListResponse> getSubscriptionFeed(Long userId, String channelSlug, String boardCode, String keyword, String sort,
+			int page, int size) {
 		String normalizedChannelSlug = normalize(channelSlug);
 		String normalizedBoardCode = normalizeUpperCase(boardCode);
+		String normalizedKeyword = normalize(keyword);
 
 		Pageable pageable = createPageable(page, size, sort);
 
-		Page<PostListResponse> posts = postRepository.findSubscriptionFeedPosts(userId, normalizedChannelSlug, normalizedBoardCode, pageable)
+		Page<PostListResponse> posts = postRepository
+				.findSubscriptionFeedPosts(userId, normalizedChannelSlug, normalizedBoardCode, normalizedKeyword, pageable)
 				.map(PostListResponse::from);
 
 		return PageResponse.from(posts);
