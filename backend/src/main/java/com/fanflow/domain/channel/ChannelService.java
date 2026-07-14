@@ -13,11 +13,14 @@ import com.fanflow.domain.board.dto.BoardResponse;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelHomeResponse;
 import com.fanflow.domain.channel.dto.ChannelResponse;
+import com.fanflow.domain.channel.dto.ChannelSubscriptionStatusResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
 import com.fanflow.domain.image.ImageUploadService;
 import com.fanflow.domain.image.dto.ImageUploadResponse;
 import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.post.dto.PostListResponse;
+import com.fanflow.domain.user.User;
+import com.fanflow.domain.user.UserRepository;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
 
@@ -31,22 +34,24 @@ public class ChannelService {
 	private final ChannelRepository channelRepository;
 	private final BoardRepository boardRepository;
 	private final PostRepository postRepository;
+	private final ChannelSubscriptionRepository channelSubscriptionRepository;
+	private final UserRepository userRepository;
 
 	private final BoardService boardService;
 	private final ImageUploadService imageUploadService;
 
 	public List<ChannelResponse> getChannels() {
-		return channelRepository.findByActiveTrueOrderByNameAsc().stream().map(ChannelResponse::from).toList();
+		return channelRepository.findByActiveTrueOrderByNameAsc().stream().map(this::toChannelResponse).toList();
 	}
 
 	public ChannelResponse getChannel(String slug) {
-		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
 		if (!channel.isActive()) {
 			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
 		}
 
-		return ChannelResponse.from(channel);
+		return toChannelResponse(channel);
 	}
 
 	public ChannelHomeResponse getChannelHome(String slug) {
@@ -67,7 +72,7 @@ public class ChannelService {
 		List<PostListResponse> recentPosts = postRepository.findChannelHomeRecentPosts(slug, PageRequest.of(0, 5)).stream()
 				.map(PostListResponse::from).toList();
 
-		return ChannelHomeResponse.builder().channel(ChannelResponse.from(channel)).boards(boards).noticePosts(noticePosts).popularPosts(popularPosts)
+		return ChannelHomeResponse.builder().channel(toChannelResponse(channel)).boards(boards).noticePosts(noticePosts).popularPosts(popularPosts)
 				.recentPosts(recentPosts).build();
 	}
 
@@ -172,5 +177,70 @@ public class ChannelService {
 		}
 
 		return ChannelResponse.from(channel);
+	}
+
+	private ChannelResponse toChannelResponse(Channel channel) {
+		long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(channel.getChannelId());
+
+		return ChannelResponse.from(channel, subscriberCount, false);
+	}
+
+	private ChannelResponse toChannelResponse(Channel channel, Long userId) {
+		long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(channel.getChannelId());
+
+		boolean subscribed = userId != null && channelSubscriptionRepository.existsByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId());
+
+		return ChannelResponse.from(channel, subscriberCount, subscribed);
+	}
+
+	@Transactional
+	public ChannelSubscriptionStatusResponse subscribeChannel(String slug, Long userId) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		if (!channel.isActive()) {
+			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
+		}
+
+		if (channelSubscriptionRepository.existsByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId())) {
+			throw new BusinessException(ErrorCode.ALREADY_SUBSCRIBED_CHANNEL);
+		}
+
+		ChannelSubscription subscription = ChannelSubscription.builder().user(user).channel(channel).build();
+
+		channelSubscriptionRepository.save(subscription);
+
+		return toSubscriptionStatus(channel, userId);
+	}
+
+	@Transactional
+	public ChannelSubscriptionStatusResponse unsubscribeChannel(String slug, Long userId) {
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		ChannelSubscription subscription = channelSubscriptionRepository.findByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId())
+				.orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_SUBSCRIPTION_NOT_FOUND));
+
+		channelSubscriptionRepository.delete(subscription);
+
+		return toSubscriptionStatus(channel, userId);
+	}
+
+	public ChannelSubscriptionStatusResponse getSubscriptionStatus(String slug, Long userId) {
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		if (!channel.isActive()) {
+			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
+		}
+
+		return toSubscriptionStatus(channel, userId);
+	}
+
+	private ChannelSubscriptionStatusResponse toSubscriptionStatus(Channel channel, Long userId) {
+		boolean subscribed = channelSubscriptionRepository.existsByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId());
+		long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(channel.getChannelId());
+
+		return ChannelSubscriptionStatusResponse.builder().channelId(channel.getChannelId()).channelSlug(channel.getSlug()).subscribed(subscribed)
+				.subscriberCount(subscriberCount).build();
 	}
 }

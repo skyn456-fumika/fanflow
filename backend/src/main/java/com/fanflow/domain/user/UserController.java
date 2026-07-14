@@ -1,5 +1,7 @@
 package com.fanflow.domain.user;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.post.dto.PostListResponse;
 import com.fanflow.domain.user.dto.NicknameUpdateRequest;
@@ -81,6 +84,13 @@ public class UserController {
 		PageResponse<PostListResponse> response = userService.getMyLikedPosts(userDetails.getUserId(), page, size);
 
 		return ApiResponse.success("내가 좋아요한 게시글 목록 조회에 성공했습니다.", response);
+	}
+
+	@GetMapping("/api/users/me/subscribed-channels")
+	public ApiResponse<List<ChannelResponse>> getMySubscribedChannels(@CurrentUser CustomUserDetails userDetails) {
+		List<ChannelResponse> response = userService.getMySubscribedChannels(userDetails.getUserId());
+
+		return ApiResponse.success("내 구독 채널 목록 조회에 성공했습니다.", response);
 	}
 
 	@DeleteMapping("/api/users/me")

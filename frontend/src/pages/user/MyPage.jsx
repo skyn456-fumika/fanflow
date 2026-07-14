@@ -10,6 +10,7 @@ import {
   updatePassword,
   updateProfileImage,
 } from '../../api/authApi'
+import { getMySubscribedChannels } from '../../api/channelApi'
 
 function MyPage() {
   const location = useLocation()
@@ -42,6 +43,8 @@ function MyPage() {
   const [myLikedPostsPage, setMyLikedPostsPage] = useState(0)
 
   const [activityLoading, setActivityLoading] = useState(false)
+
+  const [mySubscribedChannels, setMySubscribedChannels] = useState([])
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) {
@@ -179,6 +182,22 @@ function MyPage() {
     }
   }
 
+  const loadMySubscribedChannels = async () => {
+    try {
+      setActivityLoading(true)
+
+      const result = await getMySubscribedChannels()
+
+      if (result.success) {
+        setMySubscribedChannels(result.data)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setActivityLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadMyInfo()
   }, [])
@@ -198,6 +217,10 @@ function MyPage() {
 
     if (activeTab === 'likes') {
       loadMyLikedPosts()
+    }
+
+    if (activeTab === 'channels') {
+      loadMySubscribedChannels()
     }
   }, [user, activeTab, myPostsPage, myCommentsPage, myLikedPostsPage])
 
@@ -332,6 +355,10 @@ function MyPage() {
 
     if (tab === 'likes') {
       setMyLikedPostsPage(0)
+    }
+
+    if (tab === 'channels') {
+      setMySubscribedChannels([])
     }
   }
 
@@ -560,6 +587,14 @@ function MyPage() {
           >
             좋아요한 게시글
           </button>
+
+          <button
+            type="button"
+            className={activeTab === 'channels' ? 'active' : ''}
+            onClick={() => handleTabChange('channels')}
+          >
+            구독 채널
+          </button>
         </div>
 
         {activityLoading ? (
@@ -720,6 +755,49 @@ function MyPage() {
                       다음
                     </button>
                   </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'channels' && (
+              <div className="channel-list-grid">
+                {mySubscribedChannels.length === 0 ? (
+                  <div className="empty-box">구독한 채널이 없습니다.</div>
+                ) : (
+                  mySubscribedChannels.map((channel) => (
+                    <Link
+                      key={channel.channelId}
+                      to={`/channels/${channel.slug}`}
+                      className="channel-list-card"
+                    >
+                      {channel.bannerImageUrl && (
+                        <div className="channel-list-banner">
+                          <img src={getImageUrl(channel.bannerImageUrl)} alt="" />
+                        </div>
+                      )}
+
+                      <div className="channel-list-body">
+                        <div className="channel-list-profile">
+                          {channel.profileImageUrl ? (
+                            <img src={getImageUrl(channel.profileImageUrl)} alt={channel.name} />
+                          ) : (
+                            <span>{channel.name?.charAt(0) || '?'}</span>
+                          )}
+                        </div>
+
+                        <div className="channel-list-info">
+                          <span className="home-eyebrow">Subscribed</span>
+                          <strong>{channel.name}</strong>
+                          <p>{channel.description || '채널 설명이 없습니다.'}</p>
+
+                          <div className="channel-list-meta">
+                            <span>구독자 {channel.subscriberCount || 0}</span>
+                            <span>구독 중</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))
                 )}
               </div>
             )}

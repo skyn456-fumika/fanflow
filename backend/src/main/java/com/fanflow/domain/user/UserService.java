@@ -1,5 +1,7 @@
 package com.fanflow.domain.user;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fanflow.domain.channel.ChannelSubscriptionRepository;
+import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.comment.CommentRepository;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.image.ImageFileService;
@@ -40,6 +44,7 @@ public class UserService {
 	private final PostRepository postRepository;
 	private final CommentRepository commentRepository;
 	private final PostLikeRepository postLikeRepository;
+	private final ChannelSubscriptionRepository channelSubscriptionRepository;
 
 	private final ImageUploadService imageUploadService;
 	private final ImageFileService imageFileService;
@@ -199,5 +204,13 @@ public class UserService {
 		Page<CommentResponse> comments = commentRepository.findPublicCommentsByUserId(userId, pageable).map(CommentResponse::from);
 
 		return PageResponse.from(comments);
+	}
+
+	public List<ChannelResponse> getMySubscribedChannels(Long userId) {
+		return channelSubscriptionRepository.findMySubscriptions(userId).stream().map(subscription -> {
+			long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(subscription.getChannel().getChannelId());
+
+			return ChannelResponse.from(subscription.getChannel(), subscriberCount, true);
+		}).toList();
 	}
 }

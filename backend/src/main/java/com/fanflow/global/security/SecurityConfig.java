@@ -32,12 +32,15 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(corsConfigurationSource())).formLogin(form -> form.disable())
 				.httpBasic(basic -> basic.disable()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthenticationEntryPoint)
-						.accessDeniedHandler(customAccessDeniedHandler))
+				.exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthenticationEntryPoint).accessDeniedHandler(
+						customAccessDeniedHandler))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/", "/api/health", "/api/users/signup", "/api/auth/login", "/api/boards", "/uploads/**", "/swagger-ui/**",
 								"/v3/api-docs/**")
-						.permitAll().requestMatchers(HttpMethod.POST, "/api/posts/images").authenticated()
+						.permitAll().requestMatchers(HttpMethod.GET, "/api/channels/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/channels/*/subscribe").authenticated()
+						.requestMatchers(HttpMethod.DELETE, "/api/channels/*/subscribe").authenticated().requestMatchers("/api/users/me/**")
+						.authenticated().requestMatchers(HttpMethod.POST, "/api/posts/images").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/posts/*/likes/me").authenticated()
 						.requestMatchers(HttpMethod.POST, "/api/posts/*/likes").authenticated()
 						.requestMatchers(HttpMethod.DELETE, "/api/posts/*/likes").authenticated().requestMatchers(HttpMethod.GET, "/api/posts/**")

@@ -2,6 +2,7 @@ package com.fanflow.domain.channel;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,8 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelHomeResponse;
 import com.fanflow.domain.channel.dto.ChannelResponse;
+import com.fanflow.domain.channel.dto.ChannelSubscriptionStatusResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
 import com.fanflow.global.response.ApiResponse;
+import com.fanflow.global.security.CurrentUser;
+import com.fanflow.global.security.CustomUserDetails;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +50,31 @@ public class ChannelController {
 		ChannelHomeResponse response = channelService.getChannelHome(slug);
 
 		return ApiResponse.success("채널 홈 조회에 성공했습니다.", response);
+	}
+
+	@PostMapping("/api/channels/{slug}/subscribe")
+	public ApiResponse<ChannelSubscriptionStatusResponse> subscribeChannel(@PathVariable String slug, @CurrentUser CustomUserDetails userDetails) {
+
+		ChannelSubscriptionStatusResponse response = channelService.subscribeChannel(slug, userDetails.getUserId());
+
+		return ApiResponse.success("채널을 구독했습니다.", response);
+	}
+
+	@DeleteMapping("/api/channels/{slug}/subscribe")
+	public ApiResponse<ChannelSubscriptionStatusResponse> unsubscribeChannel(@PathVariable String slug, @CurrentUser CustomUserDetails userDetails) {
+
+		ChannelSubscriptionStatusResponse response = channelService.unsubscribeChannel(slug, userDetails.getUserId());
+
+		return ApiResponse.success("채널 구독을 취소했습니다.", response);
+	}
+
+	@GetMapping("/api/channels/{slug}/subscription")
+	public ApiResponse<ChannelSubscriptionStatusResponse> getSubscriptionStatus(@PathVariable String slug,
+			@CurrentUser CustomUserDetails userDetails) {
+
+		ChannelSubscriptionStatusResponse response = channelService.getSubscriptionStatus(slug, userDetails.getUserId());
+
+		return ApiResponse.success("채널 구독 상태 조회에 성공했습니다.", response);
 	}
 
 	@GetMapping("/api/admin/channels")

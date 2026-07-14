@@ -20,9 +20,16 @@ public class ChannelResponse {
 	private boolean active;
 	private LocalDateTime createdAt;
 
+	private long subscriberCount;
+	private boolean subscribed;
+
 	public static ChannelResponse from(Channel channel) {
+		return from(channel, 0L, false);
+	}
+
+	public static ChannelResponse from(Channel channel, long subscriberCount, boolean subscribed) {
 		return ChannelResponse.builder().channelId(channel.getChannelId()).name(channel.getName()).slug(channel.getSlug())
 				.description(channel.getDescription()).profileImageUrl(channel.getProfileImageUrl()).bannerImageUrl(channel.getBannerImageUrl())
-				.active(channel.isActive()).createdAt(channel.getCreatedAt()).build();
+				.active(channel.isActive()).createdAt(channel.getCreatedAt()).subscriberCount(subscriberCount).subscribed(subscribed).build();
 	}
 }

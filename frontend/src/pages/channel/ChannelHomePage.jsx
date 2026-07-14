@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { getChannelHome } from '../../api/channelApi'
+import {
+  getChannelHome,
+  getChannelSubscription,
+  subscribeChannel,
+  unsubscribeChannel,
+} from '../../api/channelApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -85,6 +90,10 @@ function ChannelHomePage() {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
+  const [subscribed, setSubscribed] = useState(false)
+  const [subscriberCount, setSubscriberCount] = useState(0)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+
   const loadChannelHome = async () => {
     try {
       setLoading(true)
@@ -102,6 +111,24 @@ function ChannelHomePage() {
       setNoticePosts(result.data.noticePosts || [])
       setPopularPosts(result.data.popularPosts || [])
       setRecentPosts(result.data.recentPosts || [])
+      
+      setSubscribed(result.data.channel.subscribed || false)
+      setSubscriberCount(result.data.channel.subscriberCount || 0)
+
+      const token = localStorage.getItem('accessToken')
+
+      if (token) {
+        try {
+          const subscriptionResult = await getChannelSubscription(channelSlug)
+
+          if (subscriptionResult.success) {
+            setSubscribed(subscriptionResult.data.subscribed)
+            setSubscriberCount(subscriptionResult.data.subscriberCount)
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      }
     } catch (error) {
       console.error(error)
 
@@ -124,6 +151,40 @@ function ChannelHomePage() {
 
     loadChannelHome()
   }, [channelSlug])
+
+  const handleToggleSubscription = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      navigate('/login', {
+        state: {
+          from: `/channels/${channelSlug}`,
+        },
+      })
+      return
+    }
+
+    try {
+      setSubscriptionLoading(true)
+
+      const result = subscribed
+        ? await unsubscribeChannel(channelSlug)
+        : await subscribeChannel(channelSlug)
+
+      if (result.success) {
+        setSubscribed(result.data.subscribed)
+        setSubscriberCount(result.data.subscriberCount)
+      } else {
+        alert(result.message || '채널 구독 처리에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || '채널 구독 처리에 실패했습니다.')
+    } finally {
+      setSubscriptionLoading(false)
+    }
+  }
 
   if (loading) {
     return <p>불러오는 중...</p>
@@ -159,6 +220,19 @@ function ChannelHomePage() {
             <span className="home-eyebrow">Fan Channel</span>
             <h1>{channel.name}</h1>
             <p>{channel.description || '채널 설명이 없습니다.'}</p>
+
+            <div className="channel-subscription-row">
+              <span>구독자 {subscriberCount}</span>
+
+              <button
+                type="button"
+                className={subscribed ? 'secondary-button' : 'primary-button'}
+                onClick={handleToggleSubscription}
+                disabled={subscriptionLoading}
+              >
+                {subscribed ? '구독 중' : '구독하기'}
+              </button>
+            </div>
 
             <div className="channel-action-row">
               <Link
