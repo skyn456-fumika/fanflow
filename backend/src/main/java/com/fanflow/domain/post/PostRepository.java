@@ -275,6 +275,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND p.blind = false
 			  AND c.active = true
 			  AND b.active = true
+			  AND (:channelSlug IS NULL OR c.slug = :channelSlug)
 			  AND EXISTS (
 			      SELECT 1
 			      FROM ChannelSubscription cs
@@ -290,6 +291,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND p.blind = false
 			  AND c.active = true
 			  AND b.active = true
+			  AND (:channelSlug IS NULL OR c.slug = :channelSlug)
 			  AND EXISTS (
 			      SELECT 1
 			      FROM ChannelSubscription cs
@@ -297,5 +299,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			        AND cs.user.userId = :userId
 			  )
 			""")
-	Page<Post> findSubscriptionFeedPosts(@Param("userId") Long userId, Pageable pageable);
+	Page<Post> findSubscriptionFeedPosts(@Param("userId") Long userId, @Param("channelSlug") String channelSlug, Pageable pageable);
 }

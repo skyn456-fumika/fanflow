@@ -20,15 +20,17 @@ public class FeedService {
 
 	private final PostRepository postRepository;
 
-	public PageResponse<PostListResponse> getSubscriptionFeed(Long userId, int page, int size) {
-		Pageable pageable = createPageable(page, size);
+	public PageResponse<PostListResponse> getSubscriptionFeed(Long userId, String channelSlug, String sort, int page, int size) {
+		String normalizedChannelSlug = normalize(channelSlug);
 
-		Page<PostListResponse> posts = postRepository.findSubscriptionFeedPosts(userId, pageable).map(PostListResponse::from);
+		Pageable pageable = createPageable(page, size, sort);
+
+		Page<PostListResponse> posts = postRepository.findSubscriptionFeedPosts(userId, normalizedChannelSlug, pageable).map(PostListResponse::from);
 
 		return PageResponse.from(posts);
 	}
 
-	private Pageable createPageable(int page, int size) {
+	private Pageable createPageable(int page, int size, String sort) {
 		if (page < 0) {
 			page = 0;
 		}
@@ -41,6 +43,22 @@ public class FeedService {
 			size = 50;
 		}
 
-		return PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+		Sort feedSort;
+
+		if ("popular".equalsIgnoreCase(sort)) {
+			feedSort = Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("viewCount"), Sort.Order.desc("createdAt"));
+		} else {
+			feedSort = Sort.by(Sort.Order.desc("createdAt"));
+		}
+
+		return PageRequest.of(page, size, feedSort);
+	}
+
+	private String normalize(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+
+		return value.trim().toLowerCase();
 	}
 }

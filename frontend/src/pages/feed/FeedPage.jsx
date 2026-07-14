@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import { getSubscriptionFeed } from '../../api/feedApi'
+import { getMySubscribedChannels } from '../../api/channelApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -54,25 +60,92 @@ function FeedPostCard({ post }) {
 function FeedPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const initialPage = Math.max(
+    Number.parseInt(searchParams.get('page') || '0', 10) || 0,
+    0,
+  )
+
+  const initialChannelSlug = searchParams.get('channelSlug') || ''
+  const initialSort =
+    searchParams.get('sort') === 'popular' ? 'popular' : 'latest'
 
   const [posts, setPosts] = useState([])
   const [pageInfo, setPageInfo] = useState(null)
-  const [page, setPage] = useState(0)
+
+  const [subscribedChannels, setSubscribedChannels] = useState([])
+
+  const [page, setPage] = useState(initialPage)
+  const [channelSlug, setChannelSlug] = useState(initialChannelSlug)
+  const [sort, setSort] = useState(initialSort)
 
   const [loading, setLoading] = useState(false)
+  const [channelLoading, setChannelLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+
+  const requireLogin = () => {
+    localStorage.removeItem('accessToken')
+
+    alert('로그인이 필요합니다.')
+
+    navigate('/login', {
+      replace: true,
+      state: {
+        from: `${location.pathname}${location.search}`,
+      },
+    })
+  }
+
+  const updateUrl = ({
+    nextPage = page,
+    nextChannelSlug = channelSlug,
+    nextSort = sort,
+  }) => {
+    const params = {}
+
+    if (nextPage > 0) {
+      params.page = String(nextPage)
+    }
+
+    if (nextChannelSlug) {
+      params.channelSlug = nextChannelSlug
+    }
+
+    if (nextSort !== 'latest') {
+      params.sort = nextSort
+    }
+
+    setSearchParams(params, {
+      replace: true,
+    })
+  }
+
+  const loadSubscribedChannels = async () => {
+    try {
+      setChannelLoading(true)
+
+      const result = await getMySubscribedChannels()
+
+      if (result.success) {
+        setSubscribedChannels(result.data || [])
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        requireLogin()
+      }
+    } finally {
+      setChannelLoading(false)
+    }
+  }
 
   const loadFeed = async () => {
     const token = localStorage.getItem('accessToken')
 
     if (!token) {
-      alert('로그인이 필요합니다.')
-      navigate('/login', {
-        replace: true,
-        state: {
-          from: location.pathname,
-        },
-      })
+      requireLogin()
       return
     }
 
@@ -83,26 +156,23 @@ function FeedPage() {
       const result = await getSubscriptionFeed({
         page,
         size: 10,
+        channelSlug,
+        sort,
       })
 
       if (result.success) {
-        setPosts(result.data.content)
+        setPosts(result.data.content || [])
         setPageInfo(result.data)
       } else {
-        setErrorMessage(result.message || '구독 피드를 불러오지 못했습니다.')
+        setErrorMessage(
+          result.message || '구독 피드를 불러오지 못했습니다.',
+        )
       }
     } catch (error) {
       console.error(error)
 
       if (error.response?.status === 401) {
-        localStorage.removeItem('accessToken')
-        alert('로그인이 필요합니다.')
-        navigate('/login', {
-          replace: true,
-          state: {
-            from: location.pathname,
-          },
-        })
+        requireLogin()
         return
       }
 
@@ -113,11 +183,42 @@ function FeedPage() {
   }
 
   useEffect(() => {
-    loadFeed()
-  }, [page])
+    const token = localStorage.getItem('accessToken')
 
-  if (loading) {
-    return <p>불러오는 중...</p>
+    if (!token) {
+      requireLogin()
+      return
+    }
+
+    loadSubscribedChannels()
+  }, [])
+
+  useEffect(() => {
+    updateUrl({
+      nextPage: page,
+      nextChannelSlug: channelSlug,
+      nextSort: sort,
+    })
+
+    loadFeed()
+  }, [page, channelSlug, sort])
+
+  const handleChannelChange = (e) => {
+    setChannelSlug(e.target.value)
+    setPage(0)
+  }
+
+  const handleSortChange = (e) => {
+    setSort(e.target.value)
+    setPage(0)
+  }
+
+  const handlePreviousPage = () => {
+    setPage((prev) => Math.max(prev - 1, 0))
+  }
+
+  const handleNextPage = () => {
+    setPage((prev) => prev + 1)
   }
 
   return (
@@ -125,7 +226,7 @@ function FeedPage() {
       <div className="page-title-row">
         <div>
           <h1>구독 피드</h1>
-          <p>내가 구독한 채널의 최신 게시글을 모아봅니다.</p>
+          <p>내가 구독한 채널의 게시글을 한곳에서 모아봅니다.</p>
         </div>
 
         <Link to="/channels" className="secondary-button">
@@ -133,11 +234,49 @@ function FeedPage() {
         </Link>
       </div>
 
+      <div className="feed-filter-box">
+        <div className="feed-filter-group">
+          <label htmlFor="feedChannel">채널</label>
+
+          <select
+            id="feedChannel"
+            value={channelSlug}
+            onChange={handleChannelChange}
+            disabled={channelLoading}
+          >
+            <option value="">전체 구독 채널</option>
+
+            {subscribedChannels.map((channel) => (
+              <option key={channel.channelId} value={channel.slug}>
+                {channel.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="feed-filter-group">
+          <label htmlFor="feedSort">정렬</label>
+
+          <select
+            id="feedSort"
+            value={sort}
+            onChange={handleSortChange}
+          >
+            <option value="latest">최신순</option>
+            <option value="popular">인기순</option>
+          </select>
+        </div>
+      </div>
+
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {posts.length === 0 ? (
+      {loading ? (
+        <p>불러오는 중...</p>
+      ) : posts.length === 0 ? (
         <div className="empty-box">
-          구독한 채널의 게시글이 없습니다. 관심 있는 채널을 구독해보세요.
+          {channelSlug
+            ? '선택한 채널에 표시할 게시글이 없습니다.'
+            : '구독한 채널의 게시글이 없습니다. 관심 있는 채널을 구독해보세요.'}
         </div>
       ) : (
         <div className="feed-post-list">
@@ -151,8 +290,8 @@ function FeedPage() {
         <div className="pagination">
           <button
             type="button"
-            disabled={pageInfo.first}
-            onClick={() => setPage((prev) => prev - 1)}
+            disabled={pageInfo.first || loading}
+            onClick={handlePreviousPage}
           >
             이전
           </button>
@@ -163,8 +302,8 @@ function FeedPage() {
 
           <button
             type="button"
-            disabled={pageInfo.last}
-            onClick={() => setPage((prev) => prev + 1)}
+            disabled={pageInfo.last || loading}
+            onClick={handleNextPage}
           >
             다음
           </button>

@@ -20,9 +20,9 @@ public class FeedController {
 
 	@GetMapping("/api/feed/subscriptions")
 	public ApiResponse<PageResponse<PostListResponse>> getSubscriptionFeed(@CurrentUser CustomUserDetails userDetails,
+			@RequestParam(required = false) String channelSlug, @RequestParam(defaultValue = "latest") String sort,
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-
-		PageResponse<PostListResponse> response = feedService.getSubscriptionFeed(userDetails.getUserId(), page, size);
+		PageResponse<PostListResponse> response = feedService.getSubscriptionFeed(userDetails.getUserId(), channelSlug, sort, page, size);
 
 		return ApiResponse.success("구독 피드 조회에 성공했습니다.", response);
 	}
