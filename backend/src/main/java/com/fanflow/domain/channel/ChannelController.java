@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelHomeResponse;
+import com.fanflow.domain.channel.dto.ChannelNotificationSettingRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelSubscriptionStatusResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
@@ -126,5 +127,14 @@ public class ChannelController {
 		ChannelResponse response = channelService.uploadBannerImage(channelId, file);
 
 		return ApiResponse.success("채널 배너 이미지가 업로드되었습니다.", response);
+	}
+
+	@PatchMapping("/api/channels/{slug}/subscription/notification")
+	public ApiResponse<ChannelSubscriptionStatusResponse> updateSubscriptionNotification(@PathVariable String slug,
+			@CurrentUser CustomUserDetails userDetails, @RequestBody ChannelNotificationSettingRequest request) {
+
+		ChannelSubscriptionStatusResponse response = channelService.updateSubscriptionNotification(slug, userDetails.getUserId(), request);
+
+		return ApiResponse.success("채널 새 글 알림 설정이 변경되었습니다.", response);
 	}
 }

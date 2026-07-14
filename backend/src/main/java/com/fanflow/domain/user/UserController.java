@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fanflow.domain.channel.dto.ChannelResponse;
+import com.fanflow.domain.channel.dto.MySubscribedChannelResponse;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.post.dto.PostListResponse;
 import com.fanflow.domain.user.dto.NicknameUpdateRequest;
@@ -87,8 +87,9 @@ public class UserController {
 	}
 
 	@GetMapping("/api/users/me/subscribed-channels")
-	public ApiResponse<List<ChannelResponse>> getMySubscribedChannels(@CurrentUser CustomUserDetails userDetails) {
-		List<ChannelResponse> response = userService.getMySubscribedChannels(userDetails.getUserId());
+	public ApiResponse<List<MySubscribedChannelResponse>> getMySubscribedChannels(@CurrentUser CustomUserDetails userDetails) {
+
+		List<MySubscribedChannelResponse> response = userService.getMySubscribedChannels(userDetails.getUserId());
 
 		return ApiResponse.success("내 구독 채널 목록 조회에 성공했습니다.", response);
 	}

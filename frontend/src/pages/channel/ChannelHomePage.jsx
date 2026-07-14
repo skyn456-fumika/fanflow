@@ -5,6 +5,7 @@ import {
   getChannelSubscription,
   subscribeChannel,
   unsubscribeChannel,
+  updateChannelNotification,
 } from '../../api/channelApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
@@ -94,6 +95,9 @@ function ChannelHomePage() {
   const [subscriberCount, setSubscriberCount] = useState(0)
   const [subscriptionLoading, setSubscriptionLoading] = useState(false)
 
+  const [notificationEnabled, setNotificationEnabled] = useState(false)
+  const [notificationLoading, setNotificationLoading] = useState(false)
+
   const loadChannelHome = async () => {
     try {
       setLoading(true)
@@ -124,6 +128,9 @@ function ChannelHomePage() {
           if (subscriptionResult.success) {
             setSubscribed(subscriptionResult.data.subscribed)
             setSubscriberCount(subscriptionResult.data.subscriberCount)
+            setNotificationEnabled(
+              subscriptionResult.data.notificationEnabled || false,
+            )
           }
         } catch (error) {
           console.error(error)
@@ -175,6 +182,9 @@ function ChannelHomePage() {
       if (result.success) {
         setSubscribed(result.data.subscribed)
         setSubscriberCount(result.data.subscriberCount)
+        setNotificationEnabled(
+          result.data.notificationEnabled || false,
+        )
       } else {
         alert(result.message || '채널 구독 처리에 실패했습니다.')
       }
@@ -183,6 +193,32 @@ function ChannelHomePage() {
       alert(error.response?.data?.message || '채널 구독 처리에 실패했습니다.')
     } finally {
       setSubscriptionLoading(false)
+    }
+  }
+
+  const handleToggleNotification = async () => {
+    try {
+      setNotificationLoading(true)
+
+      const result = await updateChannelNotification(
+        channelSlug,
+        !notificationEnabled,
+      )
+
+      if (result.success) {
+        setNotificationEnabled(result.data.notificationEnabled)
+      } else {
+        alert(result.message || '새 글 알림 설정 변경에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '새 글 알림 설정 변경에 실패했습니다.',
+      )
+    } finally {
+      setNotificationLoading(false)
     }
   }
 
@@ -224,14 +260,33 @@ function ChannelHomePage() {
             <div className="channel-subscription-row">
               <span>구독자 {subscriberCount}</span>
 
-              <button
-                type="button"
-                className={subscribed ? 'secondary-button' : 'primary-button'}
-                onClick={handleToggleSubscription}
-                disabled={subscriptionLoading}
-              >
-                {subscribed ? '구독 중' : '구독하기'}
-              </button>
+              <div className="channel-subscription-actions">
+                <button
+                  type="button"
+                  className={subscribed ? 'secondary-button' : 'primary-button'}
+                  onClick={handleToggleSubscription}
+                  disabled={subscriptionLoading}
+                >
+                  {subscribed ? '구독 중' : '구독하기'}
+                </button>
+
+                {subscribed && (
+                  <button
+                    type="button"
+                    className={
+                      notificationEnabled
+                        ? 'secondary-button'
+                        : 'secondary-button muted'
+                    }
+                    onClick={handleToggleNotification}
+                    disabled={notificationLoading}
+                  >
+                    {notificationEnabled
+                      ? '새 글 알림 ON'
+                      : '새 글 알림 OFF'}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="channel-action-row">

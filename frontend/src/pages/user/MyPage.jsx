@@ -10,7 +10,10 @@ import {
   updatePassword,
   updateProfileImage,
 } from '../../api/authApi'
-import { getMySubscribedChannels } from '../../api/channelApi'
+import {
+  getMySubscribedChannels,
+  updateChannelNotification,
+} from '../../api/channelApi'
 
 function MyPage() {
   const location = useLocation()
@@ -45,6 +48,9 @@ function MyPage() {
   const [activityLoading, setActivityLoading] = useState(false)
 
   const [mySubscribedChannels, setMySubscribedChannels] = useState([])
+
+  const [notificationUpdatingChannelId, setNotificationUpdatingChannelId] =
+  useState(null)
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) {
@@ -195,6 +201,45 @@ function MyPage() {
       console.error(error)
     } finally {
       setActivityLoading(false)
+    }
+  }
+
+  const handleChannelNotificationChange = async (
+    channel,
+    notificationEnabled,
+  ) => {
+    try {
+      setNotificationUpdatingChannelId(channel.channelId)
+
+      const result = await updateChannelNotification(
+        channel.slug,
+        notificationEnabled,
+      )
+
+      if (result.success) {
+        setMySubscribedChannels((prev) =>
+          prev.map((item) =>
+            item.channelId === channel.channelId
+              ? {
+                  ...item,
+                  notificationEnabled:
+                    result.data.notificationEnabled,
+                }
+              : item,
+          ),
+        )
+      } else {
+        alert(result.message || '새 글 알림 설정 변경에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '새 글 알림 설정 변경에 실패했습니다.',
+      )
+    } finally {
+      setNotificationUpdatingChannelId(null)
     }
   }
 
@@ -765,38 +810,82 @@ function MyPage() {
                   <div className="empty-box">구독한 채널이 없습니다.</div>
                 ) : (
                   mySubscribedChannels.map((channel) => (
-                    <Link
+                    <div
                       key={channel.channelId}
-                      to={`/channels/${channel.slug}`}
                       className="channel-list-card"
                     >
-                      {channel.bannerImageUrl && (
-                        <div className="channel-list-banner">
-                          <img src={getImageUrl(channel.bannerImageUrl)} alt="" />
-                        </div>
-                      )}
+                      <Link
+                        to={`/channels/${channel.slug}`}
+                        className="channel-list-card-link"
+                      >
+                        {channel.bannerImageUrl && (
+                          <div className="channel-list-banner">
+                            <img
+                              src={getImageUrl(channel.bannerImageUrl)}
+                              alt=""
+                            />
+                          </div>
+                        )}
 
-                      <div className="channel-list-body">
-                        <div className="channel-list-profile">
-                          {channel.profileImageUrl ? (
-                            <img src={getImageUrl(channel.profileImageUrl)} alt={channel.name} />
-                          ) : (
-                            <span>{channel.name?.charAt(0) || '?'}</span>
-                          )}
-                        </div>
+                        <div className="channel-list-body">
+                          <div className="channel-list-profile">
+                            {channel.profileImageUrl ? (
+                              <img
+                                src={getImageUrl(channel.profileImageUrl)}
+                                alt={channel.name}
+                              />
+                            ) : (
+                              <span>{channel.name?.charAt(0) || '?'}</span>
+                            )}
+                          </div>
 
-                        <div className="channel-list-info">
-                          <span className="home-eyebrow">Subscribed</span>
-                          <strong>{channel.name}</strong>
-                          <p>{channel.description || '채널 설명이 없습니다.'}</p>
+                          <div className="channel-list-info">
+                            <span className="home-eyebrow">
+                              Subscribed
+                            </span>
 
-                          <div className="channel-list-meta">
-                            <span>구독자 {channel.subscriberCount || 0}</span>
-                            <span>구독 중</span>
+                            <strong>{channel.name}</strong>
+
+                            <p>
+                              {channel.description ||
+                                '채널 설명이 없습니다.'}
+                            </p>
+
+                            <div className="channel-list-meta">
+                              <span>
+                                구독자 {channel.subscriberCount || 0}
+                              </span>
+                              <span>구독 중</span>
+                            </div>
                           </div>
                         </div>
+                      </Link>
+
+                      <div className="channel-list-notification-row">
+                        <span>새 글 알림</span>
+
+                        <button
+                          type="button"
+                          className={
+                            channel.notificationEnabled
+                              ? 'secondary-button'
+                              : 'secondary-button muted'
+                          }
+                          disabled={
+                            notificationUpdatingChannelId ===
+                            channel.channelId
+                          }
+                          onClick={() =>
+                            handleChannelNotificationChange(
+                              channel,
+                              !channel.notificationEnabled,
+                            )
+                          }
+                        >
+                          {channel.notificationEnabled ? 'ON' : 'OFF'}
+                        </button>
                       </div>
-                    </Link>
+                    </div>
                   ))
                 )}
               </div>

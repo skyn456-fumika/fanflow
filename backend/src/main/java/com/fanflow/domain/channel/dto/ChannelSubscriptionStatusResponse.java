@@ -10,5 +10,6 @@ public class ChannelSubscriptionStatusResponse {
 	private Long channelId;
 	private String channelSlug;
 	private boolean subscribed;
+	private boolean notificationEnabled;
 	private long subscriberCount;
 }

@@ -12,6 +12,7 @@ import com.fanflow.domain.board.BoardService;
 import com.fanflow.domain.board.dto.BoardResponse;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelHomeResponse;
+import com.fanflow.domain.channel.dto.ChannelNotificationSettingRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelSubscriptionStatusResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
@@ -237,10 +238,31 @@ public class ChannelService {
 	}
 
 	private ChannelSubscriptionStatusResponse toSubscriptionStatus(Channel channel, Long userId) {
-		boolean subscribed = channelSubscriptionRepository.existsByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId());
+		ChannelSubscription subscription = channelSubscriptionRepository.findByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId())
+				.orElse(null);
+
+		boolean subscribed = subscription != null;
+		boolean notificationEnabled = subscription != null && subscription.isNotificationEnabled();
+
 		long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(channel.getChannelId());
 
 		return ChannelSubscriptionStatusResponse.builder().channelId(channel.getChannelId()).channelSlug(channel.getSlug()).subscribed(subscribed)
-				.subscriberCount(subscriberCount).build();
+				.notificationEnabled(notificationEnabled).subscriberCount(subscriberCount).build();
+	}
+
+	@Transactional
+	public ChannelSubscriptionStatusResponse updateSubscriptionNotification(String slug, Long userId, ChannelNotificationSettingRequest request) {
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		if (!channel.isActive()) {
+			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
+		}
+
+		ChannelSubscription subscription = channelSubscriptionRepository.findByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId())
+				.orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_SUBSCRIPTION_NOT_FOUND));
+
+		subscription.changeNotificationEnabled(request.isNotificationEnabled());
+
+		return toSubscriptionStatus(channel, userId);
 	}
 }

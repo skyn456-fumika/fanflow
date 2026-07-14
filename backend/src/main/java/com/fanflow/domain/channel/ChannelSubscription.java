@@ -3,6 +3,7 @@ package com.fanflow.domain.channel;
 import com.fanflow.domain.user.User;
 import com.fanflow.global.entity.BaseEntity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -36,9 +37,25 @@ public class ChannelSubscription extends BaseEntity {
 	@JoinColumn(name = "channel_id", nullable = false)
 	private Channel channel;
 
+	@Column(nullable = false)
+	private boolean notificationEnabled;
+
 	@Builder
 	public ChannelSubscription(User user, Channel channel) {
 		this.user = user;
 		this.channel = channel;
+		this.notificationEnabled = true;
+	}
+
+	public void enableNotification() {
+		this.notificationEnabled = true;
+	}
+
+	public void disableNotification() {
+		this.notificationEnabled = false;
+	}
+
+	public void changeNotificationEnabled(boolean notificationEnabled) {
+		this.notificationEnabled = notificationEnabled;
 	}
 }

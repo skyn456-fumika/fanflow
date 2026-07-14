@@ -36,6 +36,7 @@ public interface ChannelSubscriptionRepository extends JpaRepository<ChannelSubs
 			WHERE cs.channel.channelId = :channelId
 			  AND cs.user.userId <> :writerId
 			  AND cs.user.status = :status
+			  AND cs.notificationEnabled = true
 			""")
 	List<User> findNotificationReceivers(@Param("channelId") Long channelId, @Param("writerId") Long writerId, @Param("status") UserStatus status);
 }

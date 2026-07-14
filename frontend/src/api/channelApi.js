@@ -41,3 +41,17 @@ export const getMySubscribedChannels = async () => {
 
   return response.data
 }
+
+export const updateChannelNotification = async (
+  channelSlug,
+  notificationEnabled,
+) => {
+  const response = await axiosInstance.patch(
+    `/api/channels/${channelSlug}/subscription/notification`,
+    {
+      notificationEnabled,
+    },
+  )
+
+  return response.data
+}

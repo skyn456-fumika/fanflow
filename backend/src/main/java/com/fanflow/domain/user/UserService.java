@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.channel.ChannelSubscriptionRepository;
-import com.fanflow.domain.channel.dto.ChannelResponse;
+import com.fanflow.domain.channel.dto.MySubscribedChannelResponse;
 import com.fanflow.domain.comment.CommentRepository;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.image.ImageFileService;
@@ -206,11 +206,11 @@ public class UserService {
 		return PageResponse.from(comments);
 	}
 
-	public List<ChannelResponse> getMySubscribedChannels(Long userId) {
+	public List<MySubscribedChannelResponse> getMySubscribedChannels(Long userId) {
 		return channelSubscriptionRepository.findMySubscriptions(userId).stream().map(subscription -> {
 			long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(subscription.getChannel().getChannelId());
 
-			return ChannelResponse.from(subscription.getChannel(), subscriberCount, true);
+			return MySubscribedChannelResponse.from(subscription, subscriberCount);
 		}).toList();
 	}
 }
