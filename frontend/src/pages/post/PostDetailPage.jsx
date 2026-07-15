@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Link,
   useLocation,
@@ -49,6 +49,13 @@ function PostDetailPage() {
 
   const [highlightedCommentId, setHighlightedCommentId] =
     useState(null)
+    
+  const postContentHtml = useMemo(
+    () => ({
+      __html: post?.content || '',
+    }),
+    [post?.content],
+  )
 
   const loadPostDetail = async () => {
     const result = await getPostDetail(postId)
@@ -817,7 +824,7 @@ function PostDetailPage() {
 
         <div
           className="post-content"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={postContentHtml}
         />
 
         <div className="post-action-row">
