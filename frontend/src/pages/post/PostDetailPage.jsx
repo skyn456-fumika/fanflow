@@ -124,6 +124,62 @@ function PostDetailPage() {
     }
   }
 
+  const handleSharePost = async () => {
+    const shareUrl = window.location.href
+
+    const shareData = {
+      title: post.title,
+      text: `${post.title} - FanFlow`,
+      url: shareUrl,
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        return
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl)
+        alert('게시글 주소가 복사되었습니다.')
+        return
+      }
+
+      const textarea = document.createElement('textarea')
+      textarea.value = shareUrl
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+
+      document.body.appendChild(textarea)
+      textarea.focus()
+      textarea.select()
+
+      const copied = document.execCommand('copy')
+
+      document.body.removeChild(textarea)
+
+      if (copied) {
+        alert('게시글 주소가 복사되었습니다.')
+      } else {
+        window.prompt('아래 주소를 복사해주세요.', shareUrl)
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return
+      }
+
+      console.error(error)
+
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        alert('게시글 주소가 복사되었습니다.')
+      } catch (clipboardError) {
+        console.error(clipboardError)
+        window.prompt('아래 주소를 복사해주세요.', shareUrl)
+      }
+    }
+  }
+
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) {
       return null
@@ -523,9 +579,16 @@ function PostDetailPage() {
                 : '북마크'}
           </button>
 
+          <button type="button" onClick={handleSharePost}>
+            공유
+          </button>
+
           {isWriter && (
             <>
-              <button type="button" onClick={() => navigate(`/posts/${postId}/edit`)}>
+              <button
+                type="button"
+                onClick={() => navigate(`/posts/${postId}/edit`)}
+              >
                 수정
               </button>
 
