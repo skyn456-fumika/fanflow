@@ -161,4 +161,38 @@ public class NotificationService {
 
 		notificationRepository.save(notification);
 	}
+
+	@Transactional
+	public void createCommentLikedNotification(User receiver, Long postId, Long commentId, User actor) {
+		if (receiver == null || actor == null || !receiver.isActive()) {
+			return;
+		}
+
+		if (receiver.getUserId().equals(actor.getUserId())) {
+			return;
+		}
+
+		boolean alreadyExists = notificationRepository.existsByReceiver_UserIdAndTypeAndTargetCommentIdAndActorUserId(receiver.getUserId(),
+				NotificationType.COMMENT_LIKED, commentId, actor.getUserId());
+
+		if (alreadyExists) {
+			return;
+		}
+
+		String message = actor.getNickname() + "님이 내 댓글을 좋아합니다.";
+
+		Notification notification = Notification.builder().receiver(receiver).type(NotificationType.COMMENT_LIKED).message(message)
+				.targetPostId(postId).targetCommentId(commentId).actorUserId(actor.getUserId()).build();
+
+		notificationRepository.save(notification);
+	}
+
+	@Transactional
+	public void deleteCommentLikedNotification(Long receiverId, Long commentId, Long actorUserId) {
+		if (receiverId == null || commentId == null || actorUserId == null) {
+			return;
+		}
+
+		notificationRepository.deleteCommentLikeNotification(receiverId, NotificationType.COMMENT_LIKED, commentId, actorUserId);
+	}
 }

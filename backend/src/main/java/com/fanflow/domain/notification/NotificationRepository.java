@@ -29,4 +29,18 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 			  AND n.readStatus = true
 			""")
 	int deleteReadByReceiverId(@Param("receiverId") Long receiverId);
+
+	boolean existsByReceiver_UserIdAndTypeAndTargetCommentIdAndActorUserId(Long receiverId, NotificationType type, Long targetCommentId,
+			Long actorUserId);
+
+	@Modifying(clearAutomatically = true)
+	@Query("""
+			DELETE FROM Notification n
+			WHERE n.receiver.userId = :receiverId
+			  AND n.type = :type
+			  AND n.targetCommentId = :commentId
+			  AND n.actorUserId = :actorUserId
+			""")
+	int deleteCommentLikeNotification(@Param("receiverId") Long receiverId, @Param("type") NotificationType type, @Param("commentId") Long commentId,
+			@Param("actorUserId") Long actorUserId);
 }

@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fanflow.domain.comment.Comment;
 import com.fanflow.domain.comment.CommentRepository;
 import com.fanflow.domain.like.dto.CommentLikeResponse;
+import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.user.User;
 import com.fanflow.domain.user.UserRepository;
@@ -23,6 +24,8 @@ public class CommentLikeService {
 	private final CommentRepository commentRepository;
 	private final UserRepository userRepository;
 
+	private final NotificationService notificationService;
+
 	@Transactional
 	public CommentLikeResponse likeComment(Long commentId, Long userId) {
 		Comment comment = getActiveComment(commentId);
@@ -39,6 +42,10 @@ public class CommentLikeService {
 		commentLikeRepository.save(commentLike);
 		comment.increaseLikeCount();
 
+		if (!comment.getWriter().getUserId().equals(user.getUserId())) {
+			notificationService.createCommentLikedNotification(comment.getWriter(), comment.getPost().getPostId(), comment.getCommentId(), user);
+		}
+
 		return CommentLikeResponse.of(comment.getCommentId(), true, comment.getLikeCount());
 	}
 
@@ -51,6 +58,10 @@ public class CommentLikeService {
 
 		commentLikeRepository.delete(commentLike);
 		comment.decreaseLikeCount();
+
+		if (!comment.getWriter().getUserId().equals(userId)) {
+			notificationService.deleteCommentLikedNotification(comment.getWriter().getUserId(), comment.getCommentId(), userId);
+		}
 
 		return CommentLikeResponse.of(comment.getCommentId(), false, comment.getLikeCount());
 	}

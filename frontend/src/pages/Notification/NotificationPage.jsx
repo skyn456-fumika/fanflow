@@ -74,6 +74,10 @@ function NotificationPage() {
       return '답글'
     }
 
+    if (type === 'COMMENT_LIKED') {
+      return '댓글 좋아요'
+    }
+
     if (type === 'POST_BLINDED') {
       return '게시글 블라인드'
     }
@@ -248,7 +252,9 @@ function NotificationPage() {
       <div className="page-title-row">
         <div>
           <h1>알림</h1>
-          <p>댓글, 운영 처리, 구독 채널의 새 글 알림을 확인합니다.</p>
+          <p>
+            댓글, 답글, 좋아요, 운영 처리와 구독 채널의 새 글 알림을 확인합니다.
+          </p>
         </div>
 
         <div className="notification-page-actions">

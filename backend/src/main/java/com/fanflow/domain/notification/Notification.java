@@ -44,16 +44,19 @@ public class Notification extends BaseEntity {
 
 	private Long targetCommentId;
 
+	private Long actorUserId;
+
 	@Column(nullable = false)
 	private boolean readStatus;
 
 	@Builder
-	public Notification(User receiver, NotificationType type, String message, Long targetPostId, Long targetCommentId) {
+	public Notification(User receiver, NotificationType type, String message, Long targetPostId, Long targetCommentId, Long actorUserId) {
 		this.receiver = receiver;
 		this.type = type;
 		this.message = message;
 		this.targetPostId = targetPostId;
 		this.targetCommentId = targetCommentId;
+		this.actorUserId = actorUserId;
 		this.readStatus = false;
 	}
 
