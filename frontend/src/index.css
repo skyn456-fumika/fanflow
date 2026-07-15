@@ -3065,3 +3065,93 @@ textarea:focus {
     padding: 12px;
   }
 }
+
+.comment-item {
+  scroll-margin-top: 110px;
+}
+
+.comment-highlighted {
+  position: relative;
+  border-color: rgba(240, 90, 167, 0.9);
+  animation: comment-highlight-pulse 2.5s ease;
+}
+
+.comment-highlighted::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+
+  border: 2px solid rgba(240, 90, 167, 0.72);
+  border-radius: var(--radius-lg);
+
+  animation: comment-highlight-ring 2.5s ease;
+}
+
+@keyframes comment-highlight-pulse {
+  0% {
+    background: rgba(240, 90, 167, 0.24);
+    box-shadow:
+      0 0 0 4px rgba(240, 90, 167, 0.14),
+      var(--shadow-card);
+  }
+
+  45% {
+    background: rgba(139, 92, 246, 0.18);
+    box-shadow:
+      0 0 0 7px rgba(139, 92, 246, 0.1),
+      var(--shadow-card);
+  }
+
+  100% {
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+@keyframes comment-highlight-ring {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  70% {
+    opacity: 0.45;
+    transform: scale(1.012);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+
+.comment-reply-item.comment-highlighted {
+  animation: comment-reply-highlight-pulse 2.5s ease;
+}
+
+@keyframes comment-reply-highlight-pulse {
+  0% {
+    background: rgba(240, 90, 167, 0.24);
+    box-shadow:
+      0 0 0 4px rgba(240, 90, 167, 0.14),
+      var(--shadow-card);
+  }
+
+  45% {
+    background: rgba(139, 92, 246, 0.18);
+    box-shadow:
+      0 0 0 7px rgba(139, 92, 246, 0.1),
+      var(--shadow-card);
+  }
+
+  100% {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(24, 31, 54, 0.94),
+        rgba(14, 20, 38, 0.94)
+      );
+    box-shadow: var(--shadow-card);
+  }
+}

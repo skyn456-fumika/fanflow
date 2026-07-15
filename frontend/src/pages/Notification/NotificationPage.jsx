@@ -70,6 +70,10 @@ function NotificationPage() {
       return '댓글'
     }
 
+    if (type === 'REPLY_ON_COMMENT') {
+      return '답글'
+    }
+
     if (type === 'POST_BLINDED') {
       return '게시글 블라인드'
     }
@@ -93,7 +97,11 @@ function NotificationPage() {
       }
 
       if (notification.targetPostId) {
-        navigate(`/posts/${notification.targetPostId}`)
+        const targetPath = notification.targetCommentId
+          ? `/posts/${notification.targetPostId}#comment-${notification.targetCommentId}`
+          : `/posts/${notification.targetPostId}`
+
+        navigate(targetPath)
         return
       }
 
@@ -331,7 +339,11 @@ function NotificationPage() {
                     <span>{notification.createdAt}</span>
 
                     {notification.targetPostId && (
-                      <span>게시글로 이동</span>
+                      <span>
+                        {notification.targetCommentId
+                          ? '댓글 위치로 이동'
+                          : '게시글로 이동'}
+                      </span>
                     )}
                   </div>
 

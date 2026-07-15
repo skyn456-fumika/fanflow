@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { deletePost, getPostDetail } from '../../api/postApi'
 import {
   createComment,
@@ -21,6 +26,7 @@ import { saveRecentPost } from '../../utils/recentPostStorage'
 function PostDetailPage() {
   const { postId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [post, setPost] = useState(null)
   const [comments, setComments] = useState([])
@@ -41,6 +47,9 @@ function PostDetailPage() {
   const [replyContent, setReplyContent] = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
 
+  const [highlightedCommentId, setHighlightedCommentId] =
+    useState(null)
+
   const loadPostDetail = async () => {
     const result = await getPostDetail(postId)
 
@@ -56,6 +65,56 @@ function PostDetailPage() {
     if (result.success) {
       setComments(result.data)
     }
+  }
+
+  const scrollToTargetComment = () => {
+    const hash = location.hash
+
+    if (!hash || !hash.startsWith('#comment-')) {
+      return
+    }
+
+    const commentId = hash.replace('#comment-', '')
+
+    if (!commentId) {
+      return
+    }
+
+    let retryCount = 0
+    const maxRetryCount = 10
+
+    const findAndScroll = () => {
+      const targetElement = document.getElementById(
+        `comment-${commentId}`,
+      )
+
+      if (targetElement) {
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+
+        setHighlightedCommentId(String(commentId))
+
+        window.setTimeout(() => {
+          setHighlightedCommentId((currentId) =>
+            currentId === String(commentId)
+              ? null
+              : currentId,
+          )
+        }, 2500)
+
+        return
+      }
+
+      retryCount += 1
+
+      if (retryCount < maxRetryCount) {
+        window.setTimeout(findAndScroll, 100)
+      }
+    }
+
+    findAndScroll()
   }
 
   const loadLikeStatus = async () => {
@@ -203,8 +262,21 @@ function PostDetailPage() {
   }
 
   useEffect(() => {
+    setHighlightedCommentId(null)
     loadPageData()
   }, [postId])
+
+  useEffect(() => {
+    if (loading) {
+      return
+    }
+
+    if (!location.hash) {
+      return
+    }
+
+    scrollToTargetComment()
+  }, [loading, comments, location.hash])
 
   if (loading) {
     return <p>불러오는 중...</p>
@@ -823,11 +895,15 @@ function PostDetailPage() {
                 <div
                   id={`comment-${comment.commentId}`}
                   key={comment.commentId}
-                  className={
-                    comment.reply
-                      ? 'comment-item comment-reply-item'
-                      : 'comment-item'
-                  }
+                  className={[
+                    'comment-item',
+                    comment.reply ? 'comment-reply-item' : '',
+                    highlightedCommentId === String(comment.commentId)
+                      ? 'comment-highlighted'
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                 >
                   <div className="comment-header">
                     {comment.deleted ? (
