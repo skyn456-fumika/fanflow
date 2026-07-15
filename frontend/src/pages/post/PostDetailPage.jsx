@@ -9,6 +9,11 @@ import {
 import { getMyLikeStatus, likePost, unlikePost } from '../../api/likeApi'
 import { getMyInfo } from '../../api/authApi'
 import { createReport } from '../../api/reportApi'
+import {
+  addBookmark,
+  getBookmarkStatus,
+  removeBookmark,
+} from '../../api/bookmarkApi'
 
 function PostDetailPage() {
   const { postId } = useParams()
@@ -18,6 +23,8 @@ function PostDetailPage() {
   const [comments, setComments] = useState([])
   const [commentContent, setCommentContent] = useState('')
   const [liked, setLiked] = useState(false)
+  const [bookmarked, setBookmarked] = useState(false)
+  const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [me, setMe] = useState(null)
 
   const [loading, setLoading] = useState(false)
@@ -79,12 +86,39 @@ function PostDetailPage() {
       await loadPostDetail()
       await loadComments()
       await loadLikeStatus()
+      await loadBookmarkStatus()
       await loadMyInfo()
     } catch (error) {
       console.error(error)
       setErrorMessage('삭제되었거나 블라인드 처리된 게시글입니다.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadBookmarkStatus = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      setBookmarked(false)
+      return
+    }
+
+    try {
+      const result = await getBookmarkStatus(postId)
+
+      if (result.success) {
+        setBookmarked(result.data.bookmarked)
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        setBookmarked(false)
+        return
+      }
+
+      setBookmarked(false)
     }
   }
 
@@ -336,6 +370,63 @@ function PostDetailPage() {
     }
   }
 
+  const handleBookmarkClick = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+
+      navigate('/login', {
+        state: {
+          from: `/posts/${postId}`,
+        },
+      })
+
+      return
+    }
+
+    if (bookmarkLoading) {
+      return
+    }
+
+    try {
+      setBookmarkLoading(true)
+
+      const result = bookmarked
+        ? await removeBookmark(postId)
+        : await addBookmark(postId)
+
+      if (result.success) {
+        setBookmarked(result.data.bookmarked)
+      } else {
+        alert(result.message || '북마크 처리에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+
+        navigate('/login', {
+          replace: true,
+          state: {
+            from: `/posts/${postId}`,
+          },
+        })
+
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '북마크 처리에 실패했습니다.',
+      )
+    } finally {
+      setBookmarkLoading(false)
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -415,6 +506,19 @@ function PostDetailPage() {
         <div className="post-action-row">
           <button type="button" onClick={handleLikeClick}>
             {liked ? '좋아요 취소' : '좋아요'}
+          </button>
+
+          <button
+            type="button"
+            className={bookmarked ? 'bookmark-button active' : 'bookmark-button'}
+            onClick={handleBookmarkClick}
+            disabled={bookmarkLoading}
+          >
+            {bookmarkLoading
+              ? '처리 중...'
+              : bookmarked
+                ? '북마크 해제'
+                : '북마크'}
           </button>
 
           {isWriter && (

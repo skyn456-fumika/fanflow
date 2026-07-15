@@ -14,6 +14,7 @@ import {
   getMySubscribedChannels,
   updateChannelNotification,
 } from '../../api/channelApi'
+import { getMyBookmarks } from '../../api/bookmarkApi'
 
 function MyPage() {
   const location = useLocation()
@@ -44,6 +45,11 @@ function MyPage() {
   const [myLikedPosts, setMyLikedPosts] = useState([])
   const [myLikedPostsPageInfo, setMyLikedPostsPageInfo] = useState(null)
   const [myLikedPostsPage, setMyLikedPostsPage] = useState(0)
+
+  const [myBookmarkedPosts, setMyBookmarkedPosts] = useState([])
+  const [myBookmarkedPostsPageInfo, setMyBookmarkedPostsPageInfo] =
+    useState(null)
+  const [myBookmarkedPostsPage, setMyBookmarkedPostsPage] = useState(0)
 
   const [activityLoading, setActivityLoading] = useState(false)
 
@@ -188,6 +194,31 @@ function MyPage() {
     }
   }
 
+  const loadMyBookmarkedPosts = async () => {
+    try {
+      setActivityLoading(true)
+
+      const result = await getMyBookmarks({
+        page: myBookmarkedPostsPage,
+        size: 5,
+      })
+
+      if (result.success) {
+        setMyBookmarkedPosts(result.data.content || [])
+        setMyBookmarkedPostsPageInfo(result.data)
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+      }
+    } finally {
+      setActivityLoading(false)
+    }
+  }
+
   const loadMySubscribedChannels = async () => {
     try {
       setActivityLoading(true)
@@ -264,10 +295,21 @@ function MyPage() {
       loadMyLikedPosts()
     }
 
+    if (activeTab === 'bookmarks') {
+      loadMyBookmarkedPosts()
+    }
+
     if (activeTab === 'channels') {
       loadMySubscribedChannels()
     }
-  }, [user, activeTab, myPostsPage, myCommentsPage, myLikedPostsPage])
+  }, [
+    user,
+    activeTab,
+    myPostsPage,
+    myCommentsPage,
+    myLikedPostsPage,
+    myBookmarkedPostsPage,
+  ])
 
   const handleNicknameSubmit = async (e) => {
     e.preventDefault()
@@ -400,6 +442,10 @@ function MyPage() {
 
     if (tab === 'likes') {
       setMyLikedPostsPage(0)
+    }
+
+    if (tab === 'bookmarks') {
+      setMyBookmarkedPostsPage(0)
     }
 
     if (tab === 'channels') {
@@ -639,6 +685,14 @@ function MyPage() {
             onClick={() => handleTabChange('channels')}
           >
             구독 채널
+          </button>
+
+          <button
+            type="button"
+            className={activeTab === 'bookmarks' ? 'active' : ''}
+            onClick={() => handleTabChange('bookmarks')}
+          >
+            북마크한 게시글
           </button>
         </div>
 
@@ -888,6 +942,73 @@ function MyPage() {
                     </div>
                   ))
                 )}
+              </div>
+            )}
+
+            {activeTab === 'bookmarks' && (
+              <div className="mypage-activity-list">
+                {myBookmarkedPosts.length === 0 ? (
+                  <div className="empty-box">
+                    북마크한 게시글이 없습니다.
+                  </div>
+                ) : (
+                  myBookmarkedPosts.map((post) => (
+                    <Link
+                      to={`/posts/${post.postId}`}
+                      key={post.postId}
+                      className="mypage-activity-item"
+                    >
+                      <ActivityPath item={post} />
+
+                      <div>
+                        <span className="board-badge">
+                          {post.boardName}
+                        </span>
+
+                        <strong>{post.title}</strong>
+                      </div>
+
+                      <div className="post-meta">
+                        <span>{post.writerNickname}</span>
+                        <span>조회 {post.viewCount}</span>
+                        <span>좋아요 {post.likeCount}</span>
+                        <span>댓글 {post.commentCount}</span>
+                      </div>
+                    </Link>
+                  ))
+                )}
+
+                {myBookmarkedPostsPageInfo &&
+                  !myBookmarkedPostsPageInfo.empty && (
+                    <div className="pagination">
+                      <button
+                        type="button"
+                        disabled={myBookmarkedPostsPageInfo.first}
+                        onClick={() =>
+                          setMyBookmarkedPostsPage((prev) =>
+                            Math.max(prev - 1, 0),
+                          )
+                        }
+                      >
+                        이전
+                      </button>
+
+                      <span>
+                        {myBookmarkedPostsPageInfo.page + 1} /{' '}
+                        {myBookmarkedPostsPageInfo.totalPages}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={myBookmarkedPostsPageInfo.last}
+                        onClick={() =>
+                          setMyBookmarkedPostsPage((prev) => prev + 1)
+                        }
+                      >
+                        다음
+                      </button>
+                    </div>
+                  )}
               </div>
             )}
           </>

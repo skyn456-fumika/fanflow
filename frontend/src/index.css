@@ -2777,3 +2777,21 @@ textarea:focus {
     width: 100%;
   }
 }
+
+.post-action-row .bookmark-button.active {
+  color: #f5d0fe;
+  border-color: rgba(236, 72, 153, 0.7);
+  background: rgba(236, 72, 153, 0.18);
+}
+
+.post-action-row .bookmark-button.active:hover {
+  color: white;
+  border-color: var(--accent);
+  background: rgba(236, 72, 153, 0.26);
+}
+
+.post-action-row .bookmark-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
