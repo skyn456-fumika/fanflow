@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fanflow.domain.comment.dto.CommentCreateRequest;
 import com.fanflow.domain.comment.dto.CommentResponse;
+import com.fanflow.domain.comment.dto.CommentUpdateRequest;
 import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.post.PostRepository;
@@ -78,5 +79,30 @@ public class CommentService {
 
 		comment.delete();
 		comment.getPost().decreaseCommentCount();
+	}
+
+	@Transactional
+	public CommentResponse updateComment(Long commentId, Long userId, CommentUpdateRequest request) {
+		Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+
+		if (comment.isDeleted() || comment.isBlind()) {
+			throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+		}
+
+		Post post = comment.getPost();
+
+		if (post.isDeleted() || post.isBlind()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		if (!comment.isWriter(userId)) {
+			throw new BusinessException(ErrorCode.COMMENT_ACCESS_DENIED);
+		}
+
+		String content = request.getContent().trim();
+
+		comment.update(content);
+
+		return CommentResponse.from(comment);
 	}
 }

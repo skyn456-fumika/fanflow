@@ -6,11 +6,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fanflow.domain.comment.dto.CommentCreateRequest;
 import com.fanflow.domain.comment.dto.CommentResponse;
+import com.fanflow.domain.comment.dto.CommentUpdateRequest;
 import com.fanflow.global.response.ApiResponse;
 import com.fanflow.global.security.CurrentUser;
 import com.fanflow.global.security.CustomUserDetails;
@@ -42,5 +44,13 @@ public class CommentController {
 	public ApiResponse<Void> deleteComment(@PathVariable Long commentId, @CurrentUser CustomUserDetails userDetails) {
 		commentService.deleteComment(commentId, userDetails.getUserId());
 		return ApiResponse.success("댓글이 삭제되었습니다.");
+	}
+
+	@PutMapping("/api/comments/{commentId}")
+	public ApiResponse<CommentResponse> updateComment(@PathVariable Long commentId, @CurrentUser CustomUserDetails userDetails,
+			@Valid @RequestBody CommentUpdateRequest request) {
+		CommentResponse response = commentService.updateComment(commentId, userDetails.getUserId(), request);
+
+		return ApiResponse.success("댓글이 수정되었습니다.", response);
 	}
 }

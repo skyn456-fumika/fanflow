@@ -19,3 +19,14 @@ export const deleteComment = async (commentId) => {
 
   return response.data
 }
+
+export const updateComment = async (commentId, { content }) => {
+  const response = await axiosInstance.put(
+    `/api/comments/${commentId}`,
+    {
+      content,
+    },
+  )
+
+  return response.data
+}

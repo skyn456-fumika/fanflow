@@ -5,6 +5,7 @@ import {
   createComment,
   deleteComment,
   getComments,
+  updateComment,
 } from '../../api/commentApi'
 import { getMyLikeStatus, likePost, unlikePost } from '../../api/likeApi'
 import { getMyInfo } from '../../api/authApi'
@@ -30,6 +31,10 @@ function PostDetailPage() {
 
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [editingCommentContent, setEditingCommentContent] = useState('')
+  const [commentUpdating, setCommentUpdating] = useState(false)
 
   const loadPostDetail = async () => {
     const result = await getPostDetail(postId)
@@ -346,6 +351,11 @@ function PostDetailPage() {
       if (result.success) {
         await loadComments()
 
+        if (editingCommentId === commentId) {
+          setEditingCommentId(null)
+          setEditingCommentContent('')
+        }
+
         setPost((prev) => ({
           ...prev,
           commentCount: Math.max((prev.commentCount || 0) - 1, 0),
@@ -482,6 +492,80 @@ function PostDetailPage() {
       )
     } finally {
       setBookmarkLoading(false)
+    }
+  }
+
+  const handleStartEditComment = (comment) => {
+    setEditingCommentId(comment.commentId)
+    setEditingCommentContent(comment.content)
+  }
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null)
+    setEditingCommentContent('')
+  }
+
+  const handleUpdateComment = async (commentId) => {
+    const content = editingCommentContent.trim()
+
+    if (!content) {
+      alert('댓글 내용을 입력해주세요.')
+      return
+    }
+
+    if (content.length > 1000) {
+      alert('댓글은 1000자 이하로 입력해주세요.')
+      return
+    }
+
+    if (commentUpdating) {
+      return
+    }
+
+    try {
+      setCommentUpdating(true)
+
+      const result = await updateComment(commentId, {
+        content,
+      })
+
+      if (result.success) {
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.commentId === commentId
+              ? result.data
+              : comment,
+          ),
+        )
+
+        setEditingCommentId(null)
+        setEditingCommentContent('')
+      } else {
+        alert(result.message || '댓글 수정에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+
+        navigate('/login', {
+          replace: true,
+          state: {
+            from: `/posts/${postId}`,
+          },
+        })
+
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '댓글 수정에 실패했습니다.',
+      )
+    } finally {
+      setCommentUpdating(false)
     }
   }
 
@@ -646,21 +730,79 @@ function PostDetailPage() {
 
                       <div className="comment-writer-info">
                         <strong>{comment.writerNickname}</strong>
-                        <span>{comment.createdAt}</span>
+                        <span>
+                          {comment.createdAt}
+
+                          {comment.updatedAt &&
+                            comment.updatedAt !== comment.createdAt &&
+                            ' · 수정됨'}
+                        </span>
                       </div>
                     </Link>
                   </div>
 
-                  <p>{comment.content}</p>
+                  {editingCommentId === comment.commentId ? (
+                    <div className="comment-edit-box">
+                      <textarea
+                        value={editingCommentContent}
+                        onChange={(e) =>
+                          setEditingCommentContent(e.target.value)
+                        }
+                        rows={4}
+                        maxLength={1000}
+                        disabled={commentUpdating}
+                      />
+
+                      <div className="comment-edit-count">
+                        {editingCommentContent.length} / 1000
+                      </div>
+
+                      <div className="comment-edit-action-row">
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={handleCancelEditComment}
+                          disabled={commentUpdating}
+                        >
+                          취소
+                        </button>
+
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() =>
+                            handleUpdateComment(comment.commentId)
+                          }
+                          disabled={commentUpdating}
+                        >
+                          {commentUpdating ? '저장 중...' : '저장'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p>{comment.content}</p>
+                  )}
 
                   <div className="comment-action-row">
                     {isCommentWriter && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteComment(comment.commentId)}
-                      >
-                        삭제
-                      </button>
+                      <>
+                        {editingCommentId !== comment.commentId && (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditComment(comment)}
+                          >
+                            수정
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(comment.commentId)}
+                          disabled={commentUpdating}
+                        >
+                          삭제
+                        </button>
+                      </>
                     )}
 
                     <button

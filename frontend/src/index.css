@@ -2940,3 +2940,59 @@ textarea:focus {
     width: 100%;
   }
 }
+
+.comment-edit-box {
+  margin-top: 4px;
+}
+
+.comment-edit-box textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 13px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  color: var(--text-main);
+  background: rgba(7, 12, 26, 0.72);
+
+  line-height: 1.65;
+  resize: vertical;
+}
+
+.comment-edit-box textarea:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+.comment-edit-count {
+  margin-top: 7px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.comment-edit-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.comment-edit-action-row .primary-button,
+.comment-edit-action-row .secondary-button {
+  min-width: 72px;
+  height: 36px;
+}
+
+@media (max-width: 560px) {
+  .comment-edit-action-row {
+    flex-direction: column-reverse;
+  }
+
+  .comment-edit-action-row .primary-button,
+  .comment-edit-action-row .secondary-button {
+    width: 100%;
+  }
+}
