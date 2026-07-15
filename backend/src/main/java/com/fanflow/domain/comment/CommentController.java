@@ -53,4 +53,12 @@ public class CommentController {
 
 		return ApiResponse.success("댓글이 수정되었습니다.", response);
 	}
+
+	@PostMapping("/api/comments/{parentCommentId}/replies")
+	public ApiResponse<CommentResponse> createReply(@PathVariable Long parentCommentId, @CurrentUser CustomUserDetails userDetails,
+			@Valid @RequestBody CommentCreateRequest request) {
+		CommentResponse response = commentService.createReply(parentCommentId, userDetails.getUserId(), request);
+
+		return ApiResponse.success("답글이 작성되었습니다.", response);
+	}
 }

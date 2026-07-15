@@ -39,7 +39,7 @@ public class CommentService {
 
 		User writer = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-		Comment comment = Comment.builder().post(post).writer(writer).content(request.getContent()).build();
+		Comment comment = Comment.builder().post(post).writer(writer).content(request.getContent().trim()).parent(null).build();
 
 		Comment savedComment = commentRepository.save(comment);
 
@@ -104,5 +104,42 @@ public class CommentService {
 		comment.update(content);
 
 		return CommentResponse.from(comment);
+	}
+
+	@Transactional
+	public CommentResponse createReply(Long parentCommentId, Long userId, CommentCreateRequest request) {
+		Comment parent = commentRepository.findById(parentCommentId).orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+
+		if (parent.isDeleted() || parent.isBlind()) {
+			throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+		}
+
+		if (parent.isReply()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+		}
+
+		Post post = parent.getPost();
+
+		if (post.isDeleted() || post.isBlind()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		User writer = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		String content = request.getContent().trim();
+
+		Comment reply = Comment.builder().post(post).writer(writer).content(content).parent(parent).build();
+
+		Comment savedReply = commentRepository.save(reply);
+
+		post.increaseCommentCount();
+
+		User parentWriter = parent.getWriter();
+
+		if (!parentWriter.getUserId().equals(writer.getUserId())) {
+			notificationService.createReplyOnCommentNotification(parentWriter, post.getPostId(), savedReply.getCommentId(), writer.getNickname());
+		}
+
+		return CommentResponse.from(savedReply);
 	}
 }

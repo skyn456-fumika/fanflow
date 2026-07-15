@@ -14,6 +14,9 @@ public class CommentResponse {
 	private Long commentId;
 	private Long postId;
 
+	private Long parentCommentId;
+	private boolean reply;
+
 	private Long channelId;
 	private String channelName;
 	private String channelSlug;
@@ -38,12 +41,26 @@ public class CommentResponse {
 	private String writerProfileImageUrl;
 
 	public static CommentResponse from(Comment comment) {
-		return CommentResponse.builder().commentId(comment.getCommentId()).channelId(comment.getPost().getBoard().getChannel().getChannelId())
-				.channelName(comment.getPost().getBoard().getChannel().getName()).channelSlug(comment.getPost().getBoard().getChannel().getSlug())
+		boolean deleted = comment.isDeleted();
+
+		return CommentResponse.builder().commentId(comment.getCommentId())
+				.parentCommentId(comment.getParent() != null ? comment.getParent().getCommentId() : null).reply(comment.isReply())
+
+				.channelId(comment.getPost().getBoard().getChannel().getChannelId()).channelName(comment.getPost().getBoard().getChannel().getName())
+				.channelSlug(comment.getPost().getBoard().getChannel().getSlug())
+
 				.boardId(comment.getPost().getBoard().getBoardId()).boardCode(comment.getPost().getBoard().getCode())
-				.boardName(comment.getPost().getBoard().getName()).postId(comment.getPost().getPostId()).postTitle(comment.getPost().getTitle())
-				.writerId(comment.getWriter().getUserId()).writerNickname(comment.getWriter().getNickname()).content(comment.getContent())
-				.blind(comment.isBlind()).deleted(comment.isDeleted()).createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt())
-				.writerProfileImageUrl(comment.getWriter().getProfileImageUrl()).build();
+				.boardName(comment.getPost().getBoard().getName())
+
+				.postId(comment.getPost().getPostId()).postTitle(comment.getPost().getTitle())
+
+				.writerId(deleted ? null : comment.getWriter().getUserId()).writerNickname(deleted ? "알 수 없음" : comment.getWriter().getNickname())
+				.writerProfileImageUrl(deleted ? null : comment.getWriter().getProfileImageUrl())
+
+				.content(deleted ? "삭제된 댓글입니다." : comment.getContent())
+
+				.blind(comment.isBlind()).deleted(deleted)
+
+				.createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt()).build();
 	}
 }

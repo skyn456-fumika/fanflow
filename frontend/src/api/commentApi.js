@@ -30,3 +30,17 @@ export const updateComment = async (commentId, { content }) => {
 
   return response.data
 }
+
+export const createReply = async (
+  parentCommentId,
+  { content },
+) => {
+  const response = await axiosInstance.post(
+    `/api/comments/${parentCommentId}/replies`,
+    {
+      content,
+    },
+  )
+
+  return response.data
+}

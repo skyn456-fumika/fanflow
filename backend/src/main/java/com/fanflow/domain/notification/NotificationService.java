@@ -147,4 +147,18 @@ public class NotificationService {
 	public void deleteReadNotifications(Long userId) {
 		notificationRepository.deleteReadByReceiverId(userId);
 	}
+
+	@Transactional
+	public void createReplyOnCommentNotification(User receiver, Long postId, Long replyCommentId, String replyWriterNickname) {
+		if (receiver == null || !receiver.isActive()) {
+			return;
+		}
+
+		String message = replyWriterNickname + "님이 내 댓글에 답글을 남겼습니다.";
+
+		Notification notification = Notification.builder().receiver(receiver).type(NotificationType.REPLY_ON_COMMENT).message(message)
+				.targetPostId(postId).targetCommentId(replyCommentId).build();
+
+		notificationRepository.save(notification);
+	}
 }

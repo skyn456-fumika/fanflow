@@ -16,10 +16,37 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			FROM Comment c
 			JOIN FETCH c.post p
 			JOIN FETCH c.writer w
+			LEFT JOIN FETCH c.parent parent
+			LEFT JOIN FETCH parent.writer parentWriter
 			WHERE p.postId = :postId
-			  AND c.deleted = false
 			  AND c.blind = false
-			ORDER BY c.createdAt ASC
+			  AND (
+			        c.parent IS NULL
+			        OR parent.blind = false
+			      )
+			  AND (
+			        c.deleted = false
+			        OR (
+			             c.parent IS NULL
+			             AND EXISTS (
+			                  SELECT reply.commentId
+			                  FROM Comment reply
+			                  WHERE reply.parent = c
+			                    AND reply.deleted = false
+			                    AND reply.blind = false
+			             )
+			        )
+			      )
+			ORDER BY
+			  CASE
+			    WHEN c.parent IS NULL THEN c.commentId
+			    ELSE c.parent.commentId
+			  END ASC,
+			  CASE
+			    WHEN c.parent IS NULL THEN 0
+			    ELSE 1
+			  END ASC,
+			  c.createdAt ASC
 			""")
 	List<Comment> findVisibleCommentsByPostId(@Param("postId") Long postId);
 

@@ -2996,3 +2996,72 @@ textarea:focus {
     width: 100%;
   }
 }
+
+.comment-reply-item {
+  position: relative;
+  margin-left: 52px;
+  border-color: rgba(139, 92, 246, 0.28);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(24, 31, 54, 0.94),
+      rgba(14, 20, 38, 0.94)
+    );
+}
+
+.comment-reply-item::before {
+  content: '↳';
+  position: absolute;
+  left: -34px;
+  top: 20px;
+  color: var(--primary);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.comment-reply-form {
+  margin-top: 16px;
+  padding: 15px;
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  border-radius: var(--radius-md);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.comment-reply-form textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  background: rgba(7, 12, 26, 0.72);
+  line-height: 1.65;
+  resize: vertical;
+}
+
+.comment-reply-form textarea:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+.deleted-comment-text {
+  color: var(--text-muted) !important;
+  font-style: italic;
+}
+
+@media (max-width: 560px) {
+  .comment-reply-item {
+    margin-left: 24px;
+  }
+
+  .comment-reply-item::before {
+    left: -20px;
+    top: 18px;
+    font-size: 16px;
+  }
+
+  .comment-reply-form {
+    padding: 12px;
+  }
+}

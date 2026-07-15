@@ -45,11 +45,16 @@ public class Comment extends BaseEntity {
 	@Column(nullable = false)
 	private boolean deleted;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "parent_comment_id")
+	private Comment parent;
+
 	@Builder
-	public Comment(Post post, User writer, String content) {
+	public Comment(Post post, User writer, String content, Comment parent) {
 		this.post = post;
 		this.writer = writer;
 		this.content = content;
+		this.parent = parent;
 		this.blind = false;
 		this.deleted = false;
 	}
@@ -72,5 +77,13 @@ public class Comment extends BaseEntity {
 
 	public boolean isWriter(Long userId) {
 		return this.writer.getUserId().equals(userId);
+	}
+
+	public boolean isReply() {
+		return this.parent != null;
+	}
+
+	public boolean isRootComment() {
+		return this.parent == null;
 	}
 }

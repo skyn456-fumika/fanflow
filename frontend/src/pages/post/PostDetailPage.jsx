@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deletePost, getPostDetail } from '../../api/postApi'
 import {
   createComment,
+  createReply,
   deleteComment,
   getComments,
   updateComment,
@@ -35,6 +36,10 @@ function PostDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
   const [commentUpdating, setCommentUpdating] = useState(false)
+
+  const [replyingCommentId, setReplyingCommentId] = useState(null)
+  const [replyContent, setReplyContent] = useState('')
+  const [replySubmitting, setReplySubmitting] = useState(false)
 
   const loadPostDetail = async () => {
     const result = await getPostDetail(postId)
@@ -356,6 +361,11 @@ function PostDetailPage() {
           setEditingCommentContent('')
         }
 
+        if (replyingCommentId === commentId) {
+          setReplyingCommentId(null)
+          setReplyContent('')
+        }
+
         setPost((prev) => ({
           ...prev,
           commentCount: Math.max((prev.commentCount || 0) - 1, 0),
@@ -496,6 +506,9 @@ function PostDetailPage() {
   }
 
   const handleStartEditComment = (comment) => {
+    setReplyingCommentId(null)
+    setReplyContent('')
+
     setEditingCommentId(comment.commentId)
     setEditingCommentContent(comment.content)
   }
@@ -566,6 +579,96 @@ function PostDetailPage() {
       )
     } finally {
       setCommentUpdating(false)
+    }
+  }
+
+  const handleStartReply = (comment) => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+
+      navigate('/login', {
+        state: {
+          from: `/posts/${postId}`,
+        },
+      })
+
+      return
+    }
+
+    setEditingCommentId(null)
+    setEditingCommentContent('')
+
+    setReplyingCommentId(comment.commentId)
+    setReplyContent('')
+  }
+
+  const handleCancelReply = () => {
+    setReplyingCommentId(null)
+    setReplyContent('')
+  }
+
+  const handleReplySubmit = async (parentCommentId) => {
+    const content = replyContent.trim()
+
+    if (!content) {
+      alert('답글 내용을 입력해주세요.')
+      return
+    }
+
+    if (content.length > 1000) {
+      alert('답글은 1000자 이하로 입력해주세요.')
+      return
+    }
+
+    if (replySubmitting) {
+      return
+    }
+
+    try {
+      setReplySubmitting(true)
+
+      const result = await createReply(parentCommentId, {
+        content,
+      })
+
+      if (result.success) {
+        setReplyingCommentId(null)
+        setReplyContent('')
+
+        await loadComments()
+
+        setPost((prev) => ({
+          ...prev,
+          commentCount: (prev.commentCount || 0) + 1,
+        }))
+      } else {
+        alert(result.message || '답글 작성에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+
+        navigate('/login', {
+          replace: true,
+          state: {
+            from: `/posts/${postId}`,
+          },
+        })
+
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '답글 작성에 실패했습니다.',
+      )
+    } finally {
+      setReplySubmitting(false)
     }
   }
 
@@ -711,34 +814,66 @@ function PostDetailPage() {
         ) : (
           <div className="comment-list">
             {comments.map((comment) => {
-              const isCommentWriter = me && comment.writerId === me.userId
+              const isCommentWriter =
+                !comment.deleted &&
+                me &&
+                comment.writerId === me.userId
 
               return (
-                <div key={comment.commentId} className="comment-item">
+                <div
+                  id={`comment-${comment.commentId}`}
+                  key={comment.commentId}
+                  className={
+                    comment.reply
+                      ? 'comment-item comment-reply-item'
+                      : 'comment-item'
+                  }
+                >
                   <div className="comment-header">
-                    <Link to={`/users/${comment.writerId}`} className="comment-writer-box comment-author-link">
-                      <div className="profile-avatar small">
-                        {comment.writerProfileImageUrl ? (
-                          <img
-                            src={getImageUrl(comment.writerProfileImageUrl)}
-                            alt="댓글 작성자 프로필"
-                          />
-                        ) : (
-                          <span>{comment.writerNickname?.charAt(0) || '?'}</span>
-                        )}
-                      </div>
+                    {comment.deleted ? (
+                      <div className="comment-writer-box">
+                        <div className="profile-avatar small">
+                          <span>?</span>
+                        </div>
 
-                      <div className="comment-writer-info">
-                        <strong>{comment.writerNickname}</strong>
-                        <span>
-                          {comment.createdAt}
-
-                          {comment.updatedAt &&
-                            comment.updatedAt !== comment.createdAt &&
-                            ' · 수정됨'}
-                        </span>
+                        <div className="comment-writer-info">
+                          <strong>알 수 없음</strong>
+                          <span>{comment.createdAt}</span>
+                        </div>
                       </div>
-                    </Link>
+                    ) : (
+                      <Link
+                        to={`/users/${comment.writerId}`}
+                        className="comment-writer-box comment-author-link"
+                      >
+                        <div className="profile-avatar small">
+                          {comment.writerProfileImageUrl ? (
+                            <img
+                              src={getImageUrl(
+                                comment.writerProfileImageUrl,
+                              )}
+                              alt="댓글 작성자 프로필"
+                            />
+                          ) : (
+                            <span>
+                              {comment.writerNickname?.charAt(0) || '?'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="comment-writer-info">
+                          <strong>{comment.writerNickname}</strong>
+
+                          <span>
+                            {comment.createdAt}
+
+                            {comment.updatedAt &&
+                              comment.updatedAt !== comment.createdAt &&
+                              ' · 수정됨'}
+                          </span>
+                        </div>
+                      </Link>
+                    )}
                   </div>
 
                   {editingCommentId === comment.commentId ? (
@@ -780,16 +915,70 @@ function PostDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <p>{comment.content}</p>
+                    <p className={comment.deleted ? 'deleted-comment-text' : ''}>
+                      {comment.content}
+                    </p>
+                  )}
+
+                  {replyingCommentId === comment.commentId && (
+                    <div className="comment-reply-form">
+                      <textarea
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        placeholder={`${comment.writerNickname}님에게 답글 작성`}
+                        rows={3}
+                        maxLength={1000}
+                        disabled={replySubmitting}
+                      />
+
+                      <div className="comment-edit-count">
+                        {replyContent.length} / 1000
+                      </div>
+
+                      <div className="comment-edit-action-row">
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={handleCancelReply}
+                          disabled={replySubmitting}
+                        >
+                          취소
+                        </button>
+
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() =>
+                            handleReplySubmit(comment.commentId)
+                          }
+                          disabled={replySubmitting}
+                        >
+                          {replySubmitting ? '등록 중...' : '답글 등록'}
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   <div className="comment-action-row">
-                    {isCommentWriter && (
+                    {!comment.reply &&
+                      !comment.deleted &&
+                      editingCommentId !== comment.commentId && (
+                        <button
+                          type="button"
+                          onClick={() => handleStartReply(comment)}
+                        >
+                          답글
+                        </button>
+                      )}
+
+                    {isCommentWriter && !comment.deleted && (
                       <>
                         {editingCommentId !== comment.commentId && (
                           <button
                             type="button"
-                            onClick={() => handleStartEditComment(comment)}
+                            onClick={() =>
+                              handleStartEditComment(comment)
+                            }
                           >
                             수정
                           </button>
@@ -797,20 +986,27 @@ function PostDetailPage() {
 
                         <button
                           type="button"
-                          onClick={() => handleDeleteComment(comment.commentId)}
-                          disabled={commentUpdating}
+                          onClick={() =>
+                            handleDeleteComment(comment.commentId)
+                          }
+                          disabled={commentUpdating || replySubmitting}
                         >
                           삭제
                         </button>
                       </>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => handleReportComment(comment.commentId)}
-                    >
-                      신고
-                    </button>
+                    {!comment.deleted &&
+                      editingCommentId !== comment.commentId && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleReportComment(comment.commentId)
+                          }
+                        >
+                          신고
+                        </button>
+                      )}
                   </div>
                 </div>
               )
