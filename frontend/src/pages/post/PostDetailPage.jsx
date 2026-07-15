@@ -14,6 +14,7 @@ import {
   getBookmarkStatus,
   removeBookmark,
 } from '../../api/bookmarkApi'
+import { saveRecentPost } from '../../utils/recentPostStorage'
 
 function PostDetailPage() {
   const { postId } = useParams()
@@ -35,9 +36,10 @@ function PostDetailPage() {
 
     if (result.success) {
       setPost(result.data)
+      saveRecentPost(result.data)
     }
   }
-
+  
   const loadComments = async () => {
     const result = await getComments(postId)
 

@@ -128,6 +128,7 @@ function Header() {
 
         <nav className="nav">
           <Link to="/channels">채널</Link>
+          <Link to="/recent-posts">최근 본 글</Link>
 
           {isLoggedIn ? (
             <>

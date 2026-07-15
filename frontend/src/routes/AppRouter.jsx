@@ -13,6 +13,7 @@ import NotificationPage from '../pages/notification/NotificationPage'
 import ChannelHomePage from '../pages/channel/ChannelHomePage'
 import ChannelListPage from '../pages/channel/ChannelListPage'
 import FeedPage from '../pages/feed/FeedPage'
+import RecentPostPage from '../pages/post/RecentPostPage'
 
 function AppRouter() {
   return (
@@ -20,6 +21,7 @@ function AppRouter() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/posts" element={<PostListPage />} />
+        <Route path="/recent-posts" element={<RecentPostPage />} />
         <Route path="/posts/write" element={<PostWritePage />} />
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/posts/:postId/edit" element={<PostWritePage />} />
