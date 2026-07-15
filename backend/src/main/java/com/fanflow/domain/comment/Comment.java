@@ -49,6 +49,9 @@ public class Comment extends BaseEntity {
 	@JoinColumn(name = "parent_comment_id")
 	private Comment parent;
 
+	@Column(nullable = false)
+	private long likeCount;
+
 	@Builder
 	public Comment(Post post, User writer, String content, Comment parent) {
 		this.post = post;
@@ -57,6 +60,7 @@ public class Comment extends BaseEntity {
 		this.parent = parent;
 		this.blind = false;
 		this.deleted = false;
+		this.likeCount = 0L;
 	}
 
 	public void update(String content) {
@@ -85,5 +89,15 @@ public class Comment extends BaseEntity {
 
 	public boolean isRootComment() {
 		return this.parent == null;
+	}
+
+	public void increaseLikeCount() {
+		this.likeCount++;
+	}
+
+	public void decreaseLikeCount() {
+		if (this.likeCount > 0) {
+			this.likeCount--;
+		}
 	}
 }

@@ -1,6 +1,8 @@
 package com.fanflow.domain.comment;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fanflow.domain.comment.dto.CommentCreateRequest;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.comment.dto.CommentUpdateRequest;
+import com.fanflow.domain.like.CommentLikeRepository;
 import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.post.PostRepository;
@@ -26,6 +29,7 @@ public class CommentService {
 	private final CommentRepository commentRepository;
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
+	private final CommentLikeRepository commentLikeRepository;
 
 	private final NotificationService notificationService;
 
@@ -53,14 +57,25 @@ public class CommentService {
 		return CommentResponse.from(savedComment);
 	}
 
-	public List<CommentResponse> getComments(Long postId) {
+	public List<CommentResponse> getComments(Long postId, Long userId) {
 		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
 		if (post.isDeleted() || post.isBlind()) {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 		}
 
-		return commentRepository.findVisibleCommentsByPostId(postId).stream().map(CommentResponse::from).toList();
+		List<Comment> comments = commentRepository.findVisibleCommentsByPostId(postId);
+
+		if (userId == null || comments.isEmpty()) {
+			return comments.stream().map(CommentResponse::from).toList();
+		}
+
+		List<Long> commentIds = comments.stream().filter(comment -> !comment.isDeleted()).map(Comment::getCommentId).toList();
+
+		Set<Long> likedCommentIds = new HashSet<>(commentLikeRepository.findByComment_CommentIdInAndUser_UserId(commentIds, userId).stream()
+				.map(commentLike -> commentLike.getComment().getCommentId()).toList());
+
+		return comments.stream().map(comment -> CommentResponse.from(comment, likedCommentIds.contains(comment.getCommentId()))).toList();
 	}
 
 	@Transactional

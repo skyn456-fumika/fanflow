@@ -32,6 +32,9 @@ public class CommentResponse {
 
 	private String content;
 
+	private long likeCount;
+	private boolean likedByMe;
+
 	private boolean blind;
 	private boolean deleted;
 
@@ -41,6 +44,10 @@ public class CommentResponse {
 	private String writerProfileImageUrl;
 
 	public static CommentResponse from(Comment comment) {
+		return from(comment, false);
+	}
+
+	public static CommentResponse from(Comment comment, boolean likedByMe) {
 		boolean deleted = comment.isDeleted();
 
 		return CommentResponse.builder().commentId(comment.getCommentId())
@@ -59,8 +66,8 @@ public class CommentResponse {
 
 				.content(deleted ? "삭제된 댓글입니다." : comment.getContent())
 
-				.blind(comment.isBlind()).deleted(deleted)
+				.likeCount(deleted ? 0L : comment.getLikeCount()).likedByMe(!deleted && likedByMe)
 
-				.createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt()).build();
+				.blind(comment.isBlind()).deleted(deleted).createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt()).build();
 	}
 }

@@ -3155,3 +3155,45 @@ textarea:focus {
     box-shadow: var(--shadow-card);
   }
 }
+
+.comment-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.comment-action-row .comment-like-button:hover {
+  color: #fce7f3;
+  border-color: rgba(240, 90, 167, 0.72);
+  background: var(--accent-soft);
+}
+
+.comment-action-row .comment-like-button.active {
+  color: white;
+  border-color: rgba(240, 90, 167, 0.86);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(155, 109, 255, 0.32),
+      rgba(240, 90, 167, 0.34)
+    );
+  box-shadow: 0 7px 18px rgba(240, 90, 167, 0.13);
+}
+
+.comment-action-row .comment-like-button.active:hover {
+  border-color: var(--accent);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(155, 109, 255, 0.42),
+      rgba(240, 90, 167, 0.46)
+    );
+}
+
+.comment-action-row button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}

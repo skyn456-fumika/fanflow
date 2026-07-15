@@ -44,3 +44,27 @@ export const createReply = async (
 
   return response.data
 }
+
+export const likeComment = async (commentId) => {
+  const response = await axiosInstance.post(
+    `/api/comments/${commentId}/likes`,
+  )
+
+  return response.data
+}
+
+export const unlikeComment = async (commentId) => {
+  const response = await axiosInstance.delete(
+    `/api/comments/${commentId}/likes`,
+  )
+
+  return response.data
+}
+
+export const getMyCommentLikeStatus = async (commentId) => {
+  const response = await axiosInstance.get(
+    `/api/comments/${commentId}/likes/me`,
+  )
+
+  return response.data
+}

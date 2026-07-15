@@ -33,6 +33,9 @@ public enum ErrorCode {
 
 	// Comment
 	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."), COMMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "댓글에 대한 권한이 없습니다."),
+	ALREADY_LIKED_COMMENT(HttpStatus.CONFLICT, "이미 좋아요를 누른 댓글입니다."),
+
+	COMMENT_LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글 좋아요 정보를 찾을 수 없습니다."),
 
 	// Like
 	ALREADY_LIKED_POST(HttpStatus.BAD_REQUEST, "이미 좋아요를 누른 게시글입니다."), POST_LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 정보를 찾을 수 없습니다."),

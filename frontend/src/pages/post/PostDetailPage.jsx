@@ -11,6 +11,8 @@ import {
   createReply,
   deleteComment,
   getComments,
+  likeComment,
+  unlikeComment,
   updateComment,
 } from '../../api/commentApi'
 import { getMyLikeStatus, likePost, unlikePost } from '../../api/likeApi'
@@ -49,6 +51,9 @@ function PostDetailPage() {
 
   const [highlightedCommentId, setHighlightedCommentId] =
     useState(null)
+
+  const [commentLikeLoadingIds, setCommentLikeLoadingIds] =
+    useState([])
     
   const postContentHtml = useMemo(
     () => ({
@@ -284,6 +289,38 @@ function PostDetailPage() {
 
     scrollToTargetComment()
   }, [loading, comments, location.hash])
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const token = localStorage.getItem('accessToken')
+
+      if (!token) {
+        setMe(null)
+        setLiked(false)
+        setBookmarked(false)
+
+        setComments((prev) =>
+          prev.map((comment) => ({
+            ...comment,
+            likedByMe: false,
+          })),
+        )
+
+        return
+      }
+
+      loadMyInfo()
+      loadLikeStatus()
+      loadBookmarkStatus()
+      loadComments()
+    }
+
+    window.addEventListener('auth-change', handleAuthChange)
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
+    }
+  }, [postId])
 
   if (loading) {
     return <p>불러오는 중...</p>
@@ -751,6 +788,86 @@ function PostDetailPage() {
     }
   }
 
+  const handleCommentLikeClick = async (comment) => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+
+      navigate('/login', {
+        state: {
+          from: `/posts/${postId}#comment-${comment.commentId}`,
+        },
+      })
+
+      return
+    }
+
+    if (
+      comment.deleted ||
+      comment.blind ||
+      commentLikeLoadingIds.includes(comment.commentId)
+    ) {
+      return
+    }
+
+    try {
+      setCommentLikeLoadingIds((prev) => [
+        ...prev,
+        comment.commentId,
+      ])
+
+      const result = comment.likedByMe
+        ? await unlikeComment(comment.commentId)
+        : await likeComment(comment.commentId)
+
+      if (!result.success) {
+        alert(
+          result.message ||
+            '댓글 좋아요 처리에 실패했습니다.',
+        )
+        return
+      }
+
+      setComments((prev) =>
+        prev.map((item) =>
+          item.commentId === comment.commentId
+            ? {
+                ...item,
+                likedByMe: result.data.liked,
+                likeCount: result.data.likeCount,
+              }
+            : item,
+        ),
+      )
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+
+        navigate('/login', {
+          replace: true,
+          state: {
+            from: `/posts/${postId}#comment-${comment.commentId}`,
+          },
+        })
+
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '댓글 좋아요 처리에 실패했습니다.',
+      )
+    } finally {
+      setCommentLikeLoadingIds((prev) =>
+        prev.filter((id) => id !== comment.commentId),
+      )
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -898,6 +1015,9 @@ function PostDetailPage() {
                 me &&
                 comment.writerId === me.userId
 
+              const isCommentLikeLoading =
+                commentLikeLoadingIds.includes(comment.commentId)
+
               return (
                 <div
                   id={`comment-${comment.commentId}`}
@@ -1043,6 +1163,25 @@ function PostDetailPage() {
                   )}
 
                   <div className="comment-action-row">
+                    {!comment.deleted && !comment.blind && (
+                      <button
+                        type="button"
+                        className={
+                          comment.likedByMe
+                            ? 'comment-like-button active'
+                            : 'comment-like-button'
+                        }
+                        onClick={() => handleCommentLikeClick(comment)}
+                        disabled={isCommentLikeLoading}
+                      >
+                        {isCommentLikeLoading
+                          ? '처리 중...'
+                          : comment.likedByMe
+                            ? `좋아요 취소 ${comment.likeCount || 0}`
+                            : `좋아요 ${comment.likeCount || 0}`}
+                      </button>
+                    )}
+
                     {!comment.reply &&
                       !comment.deleted &&
                       editingCommentId !== comment.commentId && (

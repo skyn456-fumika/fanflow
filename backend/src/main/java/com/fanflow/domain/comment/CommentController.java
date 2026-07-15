@@ -2,6 +2,7 @@ package com.fanflow.domain.comment;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,8 +36,15 @@ public class CommentController {
 	}
 
 	@GetMapping("/api/posts/{postId}/comments")
-	public ApiResponse<List<CommentResponse>> getComments(@PathVariable Long postId) {
-		List<CommentResponse> response = commentService.getComments(postId);
+	public ApiResponse<List<CommentResponse>> getComments(@PathVariable Long postId, Authentication authentication) {
+		Long userId = null;
+
+		if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+			userId = userDetails.getUserId();
+		}
+
+		List<CommentResponse> response = commentService.getComments(postId, userId);
+
 		return ApiResponse.success("댓글 목록 조회에 성공했습니다.", response);
 	}
 
