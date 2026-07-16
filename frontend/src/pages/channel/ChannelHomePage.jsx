@@ -255,6 +255,32 @@ function ChannelHomePage() {
           <div className="channel-info">
             <span className="home-eyebrow">Fan Channel</span>
             <h1>{channel.name}</h1>
+
+            {channel.ownerUserId && (
+              <Link
+                to={`/users/${channel.ownerUserId}`}
+                className="channel-owner-card"
+              >
+                <div className="channel-owner-avatar">
+                  {channel.ownerProfileImageUrl ? (
+                    <img
+                      src={getImageUrl(channel.ownerProfileImageUrl)}
+                      alt={channel.ownerNickname}
+                    />
+                  ) : (
+                    <span>
+                      {channel.ownerNickname?.charAt(0) || '?'}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="streamer-badge">공식 스트리머</span>
+                  <strong>{channel.ownerNickname}</strong>
+                </div>
+              </Link>
+            )}
+
             <p>{channel.description || '채널 설명이 없습니다.'}</p>
 
             <div className="channel-subscription-row">

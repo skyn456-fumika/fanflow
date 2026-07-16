@@ -3,6 +3,7 @@ package com.fanflow.domain.channel.dto;
 import java.time.LocalDateTime;
 
 import com.fanflow.domain.channel.Channel;
+import com.fanflow.domain.channelmember.dto.ChannelMemberResponse;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -23,6 +24,10 @@ public class ChannelResponse {
 	private long subscriberCount;
 	private boolean subscribed;
 
+	private Long ownerUserId;
+	private String ownerNickname;
+	private String ownerProfileImageUrl;
+
 	public static ChannelResponse from(Channel channel) {
 		return from(channel, 0L, false);
 	}
@@ -31,5 +36,13 @@ public class ChannelResponse {
 		return ChannelResponse.builder().channelId(channel.getChannelId()).name(channel.getName()).slug(channel.getSlug())
 				.description(channel.getDescription()).profileImageUrl(channel.getProfileImageUrl()).bannerImageUrl(channel.getBannerImageUrl())
 				.active(channel.isActive()).createdAt(channel.getCreatedAt()).subscriberCount(subscriberCount).subscribed(subscribed).build();
+	}
+
+	public static ChannelResponse from(Channel channel, long subscriberCount, boolean subscribed, ChannelMemberResponse owner) {
+		return ChannelResponse.builder().channelId(channel.getChannelId()).name(channel.getName()).slug(channel.getSlug())
+				.description(channel.getDescription()).profileImageUrl(channel.getProfileImageUrl()).bannerImageUrl(channel.getBannerImageUrl())
+				.active(channel.isActive()).createdAt(channel.getCreatedAt()).subscriberCount(subscriberCount).subscribed(subscribed)
+				.ownerUserId(owner == null ? null : owner.getUserId()).ownerNickname(owner == null ? null : owner.getNickname())
+				.ownerProfileImageUrl(owner == null ? null : owner.getProfileImageUrl()).build();
 	}
 }

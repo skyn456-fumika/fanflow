@@ -16,6 +16,8 @@ import com.fanflow.domain.channel.dto.ChannelNotificationSettingRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelSubscriptionStatusResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
+import com.fanflow.domain.channelmember.ChannelMemberService;
+import com.fanflow.domain.channelmember.dto.ChannelMemberResponse;
 import com.fanflow.domain.image.ImageUploadService;
 import com.fanflow.domain.image.dto.ImageUploadResponse;
 import com.fanflow.domain.post.PostRepository;
@@ -40,6 +42,7 @@ public class ChannelService {
 
 	private final BoardService boardService;
 	private final ImageUploadService imageUploadService;
+	private final ChannelMemberService channelMemberService;
 
 	public List<ChannelResponse> getChannels() {
 		return channelRepository.findByActiveTrueOrderByNameAsc().stream().map(this::toChannelResponse).toList();
@@ -62,6 +65,8 @@ public class ChannelService {
 			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
 		}
 
+		ChannelMemberResponse owner = channelMemberService.getOwner(channel.getChannelId());
+
 		List<BoardResponse> boards = boardRepository.findActiveBoardsByChannelSlug(slug).stream().map(BoardResponse::from).toList();
 
 		List<PostListResponse> noticePosts = postRepository.findChannelHomeNoticePosts(slug, PageRequest.of(0, 3)).stream()
@@ -73,8 +78,8 @@ public class ChannelService {
 		List<PostListResponse> recentPosts = postRepository.findChannelHomeRecentPosts(slug, viewerId, PageRequest.of(0, 5)).stream()
 				.map(PostListResponse::from).toList();
 
-		return ChannelHomeResponse.builder().channel(toChannelResponse(channel)).boards(boards).noticePosts(noticePosts).popularPosts(popularPosts)
-				.recentPosts(recentPosts).build();
+		return ChannelHomeResponse.builder().channel(toChannelResponse(channel, viewerId, owner)).boards(boards).noticePosts(noticePosts)
+				.popularPosts(popularPosts).recentPosts(recentPosts).build();
 	}
 
 	public List<ChannelResponse> getAdminChannels() {
@@ -264,5 +269,13 @@ public class ChannelService {
 		subscription.changeNotificationEnabled(request.isNotificationEnabled());
 
 		return toSubscriptionStatus(channel, userId);
+	}
+
+	private ChannelResponse toChannelResponse(Channel channel, Long userId, ChannelMemberResponse owner) {
+		long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(channel.getChannelId());
+
+		boolean subscribed = userId != null && channelSubscriptionRepository.existsByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId());
+
+		return ChannelResponse.from(channel, subscriberCount, subscribed, owner);
 	}
 }

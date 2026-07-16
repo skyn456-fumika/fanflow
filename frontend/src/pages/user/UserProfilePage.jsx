@@ -324,7 +324,16 @@ function UserProfilePage() {
         <div className="user-profile-info">
           <div className="user-profile-info-header">
             <div>
-              <strong>{profile.nickname}</strong>
+              <div className="user-profile-name-row">
+                <strong>{profile.nickname}</strong>
+
+                {profile.streamer && (
+                  <span className="streamer-badge">
+                    공식 스트리머
+                  </span>
+                )}
+              </div>
+
               <p>가입일 {profile.createdAt}</p>
             </div>
 
@@ -361,6 +370,56 @@ function UserProfilePage() {
           </div>
         </div>
       </div>
+
+      {profile.streamer &&
+        profile.ownedChannels?.length > 0 && (
+          <section className="mypage-section user-owned-channel-section">
+            <div className="home-section-title">
+              <div>
+                <h2>운영 중인 공식 채널</h2>
+                <p>
+                  이 사용자가 공식 스트리머로 등록된 채널입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="user-owned-channel-grid">
+              {profile.ownedChannels.map((channel) => (
+                <Link
+                  key={channel.channelId}
+                  to={`/channels/${channel.slug}`}
+                  className="user-owned-channel-card"
+                >
+                  <div className="user-owned-channel-image">
+                    {channel.profileImageUrl ? (
+                      <img
+                        src={getImageUrl(channel.profileImageUrl)}
+                        alt={channel.name}
+                      />
+                    ) : (
+                      <span>
+                        {channel.name?.charAt(0) || '?'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <span className="streamer-badge">
+                      공식 채널
+                    </span>
+
+                    <strong>{channel.name}</strong>
+
+                    <p>
+                      {channel.description ||
+                        '채널 설명이 없습니다.'}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
       <div className="mypage-section">
         <h2>공개 활동</h2>

@@ -16,13 +16,15 @@ public class AdminUserResponse {
 	private Long userId;
 	private String email;
 	private String nickname;
+	private String profileImageUrl;
 	private UserRole role;
 	private UserStatus status;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
 	public static AdminUserResponse from(User user) {
-		return AdminUserResponse.builder().userId(user.getUserId()).email(user.getEmail()).nickname(user.getNickname()).role(user.getRole())
-				.status(user.getStatus()).createdAt(user.getCreatedAt()).updatedAt(user.getUpdatedAt()).build();
+		return AdminUserResponse.builder().userId(user.getUserId()).email(user.getEmail()).nickname(user.getNickname())
+				.profileImageUrl(user.getProfileImageUrl()).role(user.getRole()).status(user.getStatus()).createdAt(user.getCreatedAt())
+				.updatedAt(user.getUpdatedAt()).build();
 	}
 }

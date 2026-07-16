@@ -30,6 +30,11 @@ public enum ErrorCode {
 	CHANNEL_SLUG_DUPLICATED(HttpStatus.BAD_REQUEST, "이미 사용 중인 채널 주소입니다."), ALREADY_SUBSCRIBED_CHANNEL(HttpStatus.BAD_REQUEST, "이미 구독한 채널입니다."),
 	CHANNEL_SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "채널 구독 정보를 찾을 수 없습니다."),
 
+	// Channel Member
+	CHANNEL_OWNER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 채널 소유자가 지정되어 있습니다."),
+	CHANNEL_MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 해당 채널의 운영자로 등록된 사용자입니다."),
+	CHANNEL_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "채널 운영자 정보를 찾을 수 없습니다."),
+
 	// Board / Post
 	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시판을 찾을 수 없습니다."), BOARD_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "비활성화된 게시판입니다."),
 	BOARD_CODE_DUPLICATED(HttpStatus.BAD_REQUEST, "이미 사용 중인 게시판 코드입니다."), NOTICE_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "공지사항은 관리자만 작성할 수 있습니다."),

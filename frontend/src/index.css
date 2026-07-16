@@ -3314,3 +3314,348 @@ textarea:focus {
     width: 100%;
   }
 }
+
+.admin-channel-member-panel {
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(7, 12, 26, 0.42);
+}
+
+.admin-channel-member-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-channel-member-header h3 {
+  margin: 0 0 6px;
+  font-size: 19px;
+}
+
+.admin-channel-member-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.admin-channel-owner-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.admin-channel-owner-form .form-group {
+  flex: 1;
+  max-width: 360px;
+}
+
+.channel-owner-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  margin: 10px 0 4px;
+  padding: 9px 12px;
+  border: 1px solid rgba(240, 90, 167, 0.32);
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+
+.channel-owner-card:hover {
+  border-color: rgba(240, 90, 167, 0.7);
+  background: rgba(240, 90, 167, 0.24);
+}
+
+.channel-owner-avatar {
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--accent)
+  );
+  font-weight: 900;
+}
+
+.channel-owner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.channel-owner-card > div:last-child {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.streamer-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 0 8px;
+  border: 1px solid rgba(240, 90, 167, 0.4);
+  border-radius: 999px;
+  color: #fce7f3;
+  background: rgba(240, 90, 167, 0.2);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .admin-channel-member-header,
+  .admin-channel-owner-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-channel-owner-form .form-group {
+    max-width: none;
+  }
+}
+
+.admin-channel-owner-search {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.admin-owner-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-owner-search-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  background: rgba(7, 12, 26, 0.42);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-owner-search-item:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-owner-search-item.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.14);
+}
+
+.admin-owner-search-avatar {
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--accent)
+  );
+  font-weight: 900;
+}
+
+.admin-owner-search-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-owner-search-item > div:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-owner-search-item strong,
+.admin-owner-search-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-owner-search-item span,
+.admin-owner-search-item small {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.admin-selected-owner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid rgba(240, 90, 167, 0.4);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+}
+
+.admin-selected-owner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-selected-owner span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.admin-selected-owner strong {
+  font-size: 17px;
+}
+
+.admin-selected-owner p {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .admin-owner-search-item {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .admin-owner-search-item small {
+    grid-column: 2;
+  }
+
+  .admin-selected-owner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-selected-owner .primary-button {
+    width: 100%;
+  }
+}
+
+.user-profile-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.user-owned-channel-section {
+  margin-top: 24px;
+}
+
+.user-owned-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    2,
+    minmax(0, 1fr)
+  );
+  gap: 14px;
+}
+
+.user-owned-channel-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(7, 12, 26, 0.42);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.user-owned-channel-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 90, 167, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.user-owned-channel-image {
+  flex: 0 0 auto;
+  width: 62px;
+  height: 62px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--accent)
+  );
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.user-owned-channel-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-owned-channel-card > div:last-child {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.user-owned-channel-card strong {
+  width: 100%;
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-owned-channel-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 760px) {
+  .user-owned-channel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-owned-channel-card {
+    align-items: flex-start;
+  }
+}

@@ -288,3 +288,36 @@ export const uploadAdminChannelBannerImage = async (channelId, file) => {
 
   return response.data
 }
+
+export const getAdminChannelMembers = async (channelId) => {
+  const response = await axiosInstance.get(
+    `/api/admin/channels/${channelId}/members`,
+  )
+
+  return response.data
+}
+
+export const assignAdminChannelOwner = async (
+  channelId,
+  userId,
+) => {
+  const response = await axiosInstance.post(
+    `/api/admin/channels/${channelId}/owner`,
+    {
+      userId,
+    },
+  )
+
+  return response.data
+}
+
+export const removeAdminChannelOwner = async (
+  channelId,
+  userId,
+) => {
+  const response = await axiosInstance.delete(
+    `/api/admin/channels/${channelId}/owner/${userId}`,
+  )
+
+  return response.data
+}

@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fanflow.domain.channel.ChannelSubscriptionRepository;
 import com.fanflow.domain.channel.dto.MySubscribedChannelResponse;
+import com.fanflow.domain.channelmember.ChannelMemberRepository;
+import com.fanflow.domain.channelmember.ChannelMemberRole;
 import com.fanflow.domain.comment.CommentRepository;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.image.ImageFileService;
@@ -26,6 +28,7 @@ import com.fanflow.domain.user.dto.PasswordUpdateRequest;
 import com.fanflow.domain.user.dto.ProfileImageUpdateResponse;
 import com.fanflow.domain.user.dto.SignupRequest;
 import com.fanflow.domain.user.dto.UserDeleteRequest;
+import com.fanflow.domain.user.dto.UserOwnedChannelResponse;
 import com.fanflow.domain.user.dto.UserPublicProfileResponse;
 import com.fanflow.domain.user.dto.UserResponse;
 import com.fanflow.global.exception.BusinessException;
@@ -45,6 +48,7 @@ public class UserService {
 	private final CommentRepository commentRepository;
 	private final PostLikeRepository postLikeRepository;
 	private final ChannelSubscriptionRepository channelSubscriptionRepository;
+	private final ChannelMemberRepository channelMemberRepository;
 
 	private final ImageUploadService imageUploadService;
 	private final ImageFileService imageFileService;
@@ -175,7 +179,10 @@ public class UserService {
 		long postCount = postRepository.countByWriter_UserIdAndDeletedFalseAndBlindFalse(userId);
 		long commentCount = commentRepository.countPublicCommentsByUserId(userId);
 
-		return UserPublicProfileResponse.from(user, postCount, commentCount);
+		List<UserOwnedChannelResponse> ownedChannels = channelMemberRepository.findActiveChannelsByUserIdAndRole(userId, ChannelMemberRole.OWNER)
+				.stream().map(UserOwnedChannelResponse::from).toList();
+
+		return UserPublicProfileResponse.from(user, postCount, commentCount, ownedChannels);
 	}
 
 	public PageResponse<PostListResponse> getPublicPosts(Long userId, int page, int size) {
