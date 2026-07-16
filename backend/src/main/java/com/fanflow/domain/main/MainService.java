@@ -18,15 +18,17 @@ public class MainService {
 
 	private final PostRepository postRepository;
 
-	public MainResponse getMain() {
+	public MainResponse getMain(Long viewerId) {
 		List<PostListResponse> noticePosts = postRepository.findMainNoticePosts(PageRequest.of(0, 3)).stream().map(PostListResponse::from).toList();
 
-		List<PostListResponse> popularPosts = postRepository.findMainPopularPosts(PageRequest.of(0, 5)).stream().map(PostListResponse::from).toList();
-
-		List<PostListResponse> recentPosts = postRepository.findMainRecentPosts(PageRequest.of(0, 5)).stream().map(PostListResponse::from).toList();
-
-		List<PostListResponse> commentedPosts = postRepository.findMainCommentedPosts(PageRequest.of(0, 5)).stream().map(PostListResponse::from)
+		List<PostListResponse> popularPosts = postRepository.findMainPopularPosts(viewerId, PageRequest.of(0, 5)).stream().map(PostListResponse::from)
 				.toList();
+
+		List<PostListResponse> recentPosts = postRepository.findMainRecentPosts(viewerId, PageRequest.of(0, 5)).stream().map(PostListResponse::from)
+				.toList();
+
+		List<PostListResponse> commentedPosts = postRepository.findMainCommentedPosts(viewerId, PageRequest.of(0, 5)).stream()
+				.map(PostListResponse::from).toList();
 
 		return MainResponse.builder().noticePosts(noticePosts).popularPosts(popularPosts).recentPosts(recentPosts).commentedPosts(commentedPosts)
 				.build();

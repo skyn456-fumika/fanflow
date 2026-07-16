@@ -55,7 +55,7 @@ public class ChannelService {
 		return toChannelResponse(channel);
 	}
 
-	public ChannelHomeResponse getChannelHome(String slug) {
+	public ChannelHomeResponse getChannelHome(String slug, Long viewerId) {
 		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
 		if (!channel.isActive()) {
@@ -67,10 +67,10 @@ public class ChannelService {
 		List<PostListResponse> noticePosts = postRepository.findChannelHomeNoticePosts(slug, PageRequest.of(0, 3)).stream()
 				.map(PostListResponse::from).toList();
 
-		List<PostListResponse> popularPosts = postRepository.findChannelHomePopularPosts(slug, PageRequest.of(0, 5)).stream()
+		List<PostListResponse> popularPosts = postRepository.findChannelHomePopularPosts(slug, viewerId, PageRequest.of(0, 5)).stream()
 				.map(PostListResponse::from).toList();
 
-		List<PostListResponse> recentPosts = postRepository.findChannelHomeRecentPosts(slug, PageRequest.of(0, 5)).stream()
+		List<PostListResponse> recentPosts = postRepository.findChannelHomeRecentPosts(slug, viewerId, PageRequest.of(0, 5)).stream()
 				.map(PostListResponse::from).toList();
 
 		return ChannelHomeResponse.builder().channel(toChannelResponse(channel)).boards(boards).noticePosts(noticePosts).popularPosts(popularPosts)

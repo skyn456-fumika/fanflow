@@ -129,12 +129,23 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			WHERE p.deleted = false
 			  AND p.blind = false
 			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
+			  AND (
 			       p.likeCount > 0
 			       OR p.viewCount >= 10
 			  )
-			ORDER BY p.likeCount DESC, p.viewCount DESC, p.createdAt DESC
+			ORDER BY p.likeCount DESC,
+			         p.viewCount DESC,
+			         p.createdAt DESC
 			""")
-	List<Post> findMainPopularPosts(Pageable pageable);
+	List<Post> findMainPopularPosts(@Param("viewerId") Long viewerId, Pageable pageable);
 
 	@Query("""
 			SELECT p
@@ -144,9 +155,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			JOIN FETCH p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
 			ORDER BY p.createdAt DESC
 			""")
-	List<Post> findMainRecentPosts(Pageable pageable);
+	List<Post> findMainRecentPosts(@Param("viewerId") Long viewerId, Pageable pageable);
 
 	@Query("""
 			SELECT p
@@ -157,9 +177,19 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			WHERE p.deleted = false
 			  AND p.blind = false
 			  AND p.commentCount > 0
-			ORDER BY p.commentCount DESC, p.createdAt DESC
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
+			ORDER BY p.commentCount DESC,
+			         p.createdAt DESC
 			""")
-	List<Post> findMainCommentedPosts(Pageable pageable);
+	List<Post> findMainCommentedPosts(@Param("viewerId") Long viewerId, Pageable pageable);
 
 	long countByDeletedFalse();
 
@@ -282,12 +312,23 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND p.deleted = false
 			  AND p.blind = false
 			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
+			  AND (
 			       p.likeCount > 0
 			       OR p.viewCount >= 10
 			  )
-			ORDER BY p.likeCount DESC, p.viewCount DESC, p.createdAt DESC
+			ORDER BY p.likeCount DESC,
+			         p.viewCount DESC,
+			         p.createdAt DESC
 			""")
-	List<Post> findChannelHomePopularPosts(@Param("channelSlug") String channelSlug, Pageable pageable);
+	List<Post> findChannelHomePopularPosts(@Param("channelSlug") String channelSlug, @Param("viewerId") Long viewerId, Pageable pageable);
 
 	@Query("""
 			SELECT p
@@ -300,9 +341,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND b.active = true
 			  AND p.deleted = false
 			  AND p.blind = false
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
 			ORDER BY p.createdAt DESC
 			""")
-	List<Post> findChannelHomeRecentPosts(@Param("channelSlug") String channelSlug, Pageable pageable);
+	List<Post> findChannelHomeRecentPosts(@Param("channelSlug") String channelSlug, @Param("viewerId") Long viewerId, Pageable pageable);
 
 	@Query(value = """
 			SELECT p

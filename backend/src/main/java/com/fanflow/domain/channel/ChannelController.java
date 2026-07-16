@@ -2,6 +2,7 @@ package com.fanflow.domain.channel;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -47,8 +48,10 @@ public class ChannelController {
 	}
 
 	@GetMapping("/api/channels/{slug}/home")
-	public ApiResponse<ChannelHomeResponse> getChannelHome(@PathVariable String slug) {
-		ChannelHomeResponse response = channelService.getChannelHome(slug);
+	public ApiResponse<ChannelHomeResponse> getChannelHome(@PathVariable String slug, Authentication authentication) {
+		Long viewerId = getViewerId(authentication);
+
+		ChannelHomeResponse response = channelService.getChannelHome(slug, viewerId);
 
 		return ApiResponse.success("채널 홈 조회에 성공했습니다.", response);
 	}
@@ -136,5 +139,14 @@ public class ChannelController {
 		ChannelSubscriptionStatusResponse response = channelService.updateSubscriptionNotification(slug, userDetails.getUserId(), request);
 
 		return ApiResponse.success("채널 새 글 알림 설정이 변경되었습니다.", response);
+	}
+
+	private Long getViewerId(Authentication authentication) {
+		if (authentication == null || !authentication.isAuthenticated()
+				|| !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+			return null;
+		}
+
+		return userDetails.getUserId();
 	}
 }
