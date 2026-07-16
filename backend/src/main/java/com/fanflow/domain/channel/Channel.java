@@ -74,4 +74,9 @@ public class Channel extends BaseEntity {
 	public void updateBannerImageUrl(String bannerImageUrl) {
 		this.bannerImageUrl = bannerImageUrl;
 	}
+
+	public void updateOwnerInfo(String name, String description) {
+		this.name = name;
+		this.description = description;
+	}
 }

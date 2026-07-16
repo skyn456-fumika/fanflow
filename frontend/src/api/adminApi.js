@@ -321,3 +321,28 @@ export const removeAdminChannelOwner = async (
 
   return response.data
 }
+
+export const assignAdminChannelManager = async (
+  channelId,
+  userId,
+) => {
+  const response = await axiosInstance.post(
+    `/api/admin/channels/${channelId}/managers`,
+    {
+      userId,
+    },
+  )
+
+  return response.data
+}
+
+export const removeAdminChannelManager = async (
+  channelId,
+  userId,
+) => {
+  const response = await axiosInstance.delete(
+    `/api/admin/channels/${channelId}/managers/${userId}`,
+  )
+
+  return response.data
+}

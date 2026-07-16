@@ -316,6 +316,14 @@ function ChannelHomePage() {
             </div>
 
             <div className="channel-action-row">
+              {channel.myChannelRole === 'OWNER' && (
+                <Link
+                  to={`/channels/${channel.slug}/manage`}
+                  className="secondary-button"
+                >
+                  채널 관리
+                </Link>
+              )}
               <Link
                 to={`/channels/${channel.slug}/posts`}
                 className="primary-button"

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fanflow.domain.channelmember.ChannelMemberService;
+import com.fanflow.domain.channelmember.dto.ChannelManagerAssignRequest;
 import com.fanflow.domain.channelmember.dto.ChannelMemberResponse;
 import com.fanflow.domain.channelmember.dto.ChannelOwnerAssignRequest;
 import com.fanflow.global.response.ApiResponse;
@@ -38,5 +39,17 @@ public class AdminChannelMemberController {
 		channelMemberService.removeOwner(channelId, userId);
 
 		return ApiResponse.success("채널 소유자 지정이 해제되었습니다.");
+	}
+
+	@PostMapping("/api/admin/channels/{channelId}/managers")
+	public ApiResponse<ChannelMemberResponse> assignManager(@PathVariable Long channelId, @Valid @RequestBody ChannelManagerAssignRequest request) {
+		return ApiResponse.success("채널 매니저가 지정되었습니다.", channelMemberService.assignManager(channelId, request.getUserId()));
+	}
+
+	@DeleteMapping("/api/admin/channels/{channelId}/managers/{userId}")
+	public ApiResponse<Void> removeManager(@PathVariable Long channelId, @PathVariable Long userId) {
+		channelMemberService.removeManager(channelId, userId);
+
+		return ApiResponse.success("채널 매니저가 해제되었습니다.");
 	}
 }

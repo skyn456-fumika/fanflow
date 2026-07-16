@@ -14,6 +14,7 @@ import ChannelHomePage from '../pages/channel/ChannelHomePage'
 import ChannelListPage from '../pages/channel/ChannelListPage'
 import FeedPage from '../pages/feed/FeedPage'
 import RecentPostPage from '../pages/post/RecentPostPage'
+import ChannelManagePage from '../pages/channel/ChannelManagePage'
 
 function AppRouter() {
   return (
@@ -26,6 +27,10 @@ function AppRouter() {
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/posts/:postId/edit" element={<PostWritePage />} />
         <Route path="/channels" element={<ChannelListPage />} />
+        <Route
+          path="/channels/:channelSlug/manage"
+          element={<ChannelManagePage />}
+        />
         <Route path="/feed" element={<FeedPage />} />
         <Route path="/channels/:channelSlug" element={<ChannelHomePage />} />
         <Route path="/channels/:channelSlug/posts" element={<PostListPage />} />

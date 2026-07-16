@@ -2,14 +2,19 @@ package com.fanflow.domain.channelmember;
 
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fanflow.domain.channel.Channel;
 import com.fanflow.domain.channel.ChannelRepository;
+import com.fanflow.domain.channelmember.dto.ChannelManagerCandidateResponse;
 import com.fanflow.domain.channelmember.dto.ChannelMemberResponse;
 import com.fanflow.domain.user.User;
 import com.fanflow.domain.user.UserRepository;
+import com.fanflow.domain.user.UserStatus;
 import com.fanflow.global.exception.BusinessException;
 import com.fanflow.global.exception.ErrorCode;
 
@@ -77,5 +82,75 @@ public class ChannelMemberService {
 		}
 
 		return user;
+	}
+
+	@Transactional
+	public ChannelMemberResponse assignManager(Long channelId, Long userId) {
+		Channel channel = getChannel(channelId);
+		User user = getActiveUser(userId);
+
+		if (channelMemberRepository.existsByChannel_ChannelIdAndUser_UserId(channelId, userId)) {
+			throw new BusinessException(ErrorCode.CHANNEL_MEMBER_ALREADY_EXISTS);
+		}
+
+		ChannelMember channelMember = ChannelMember.builder().channel(channel).user(user).role(ChannelMemberRole.MANAGER).build();
+
+		return ChannelMemberResponse.from(channelMemberRepository.save(channelMember));
+	}
+
+	@Transactional
+	public void removeManager(Long channelId, Long userId) {
+		ChannelMember manager = channelMemberRepository.findByChannel_ChannelIdAndUser_UserIdAndRole(channelId, userId, ChannelMemberRole.MANAGER)
+				.orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_MANAGER_NOT_FOUND));
+
+		channelMemberRepository.delete(manager);
+	}
+
+	public ChannelMemberRole getUserRole(Long channelId, Long userId) {
+		if (userId == null) {
+			return null;
+		}
+
+		return channelMemberRepository.findByChannel_ChannelIdAndUser_UserId(channelId, userId).map(ChannelMember::getRole).orElse(null);
+	}
+
+	public boolean isOwner(Long channelId, Long userId) {
+		if (channelId == null || userId == null) {
+			return false;
+		}
+
+		return channelMemberRepository.existsByChannel_ChannelIdAndUser_UserIdAndRole(channelId, userId, ChannelMemberRole.OWNER);
+	}
+
+	public void validateOwner(Long channelId, Long userId) {
+		if (!isOwner(channelId, userId)) {
+			throw new BusinessException(ErrorCode.CHANNEL_MANAGE_FORBIDDEN);
+		}
+	}
+
+	public Channel getActiveChannel(String slug) {
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		if (!channel.isActive()) {
+			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
+		}
+
+		return channel;
+	}
+
+	public List<ChannelManagerCandidateResponse> searchManagerCandidates(Long channelId, Long ownerUserId, String keyword) {
+		validateOwner(channelId, ownerUserId);
+
+		String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+		if (normalizedKeyword.isBlank()) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+		}
+
+		Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("nickname")));
+
+		return userRepository.searchAdminUsers(UserStatus.ACTIVE, normalizedKeyword, pageable).stream()
+				.filter(user -> !channelMemberRepository.existsByChannel_ChannelIdAndUser_UserId(channelId, user.getUserId()))
+				.map(ChannelManagerCandidateResponse::from).toList();
 	}
 }

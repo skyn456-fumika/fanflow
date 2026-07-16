@@ -13,9 +13,11 @@ import com.fanflow.domain.board.dto.BoardResponse;
 import com.fanflow.domain.channel.dto.ChannelCreateRequest;
 import com.fanflow.domain.channel.dto.ChannelHomeResponse;
 import com.fanflow.domain.channel.dto.ChannelNotificationSettingRequest;
+import com.fanflow.domain.channel.dto.ChannelOwnerUpdateRequest;
 import com.fanflow.domain.channel.dto.ChannelResponse;
 import com.fanflow.domain.channel.dto.ChannelSubscriptionStatusResponse;
 import com.fanflow.domain.channel.dto.ChannelUpdateRequest;
+import com.fanflow.domain.channelmember.ChannelMemberRole;
 import com.fanflow.domain.channelmember.ChannelMemberService;
 import com.fanflow.domain.channelmember.dto.ChannelMemberResponse;
 import com.fanflow.domain.image.ImageUploadService;
@@ -66,6 +68,7 @@ public class ChannelService {
 		}
 
 		ChannelMemberResponse owner = channelMemberService.getOwner(channel.getChannelId());
+		ChannelMemberRole myChannelRole = channelMemberService.getUserRole(channel.getChannelId(), viewerId);
 
 		List<BoardResponse> boards = boardRepository.findActiveBoardsByChannelSlug(slug).stream().map(BoardResponse::from).toList();
 
@@ -78,8 +81,8 @@ public class ChannelService {
 		List<PostListResponse> recentPosts = postRepository.findChannelHomeRecentPosts(slug, viewerId, PageRequest.of(0, 5)).stream()
 				.map(PostListResponse::from).toList();
 
-		return ChannelHomeResponse.builder().channel(toChannelResponse(channel, viewerId, owner)).boards(boards).noticePosts(noticePosts)
-				.popularPosts(popularPosts).recentPosts(recentPosts).build();
+		return ChannelHomeResponse.builder().channel(toChannelResponse(channel, viewerId, owner, myChannelRole)).boards(boards)
+				.noticePosts(noticePosts).popularPosts(popularPosts).recentPosts(recentPosts).build();
 	}
 
 	public List<ChannelResponse> getAdminChannels() {
@@ -271,11 +274,78 @@ public class ChannelService {
 		return toSubscriptionStatus(channel, userId);
 	}
 
-	private ChannelResponse toChannelResponse(Channel channel, Long userId, ChannelMemberResponse owner) {
+	private ChannelResponse toChannelResponse(Channel channel, Long userId, ChannelMemberResponse owner, ChannelMemberRole myChannelRole) {
 		long subscriberCount = channelSubscriptionRepository.countByChannel_ChannelId(channel.getChannelId());
 
 		boolean subscribed = userId != null && channelSubscriptionRepository.existsByUser_UserIdAndChannel_ChannelId(userId, channel.getChannelId());
 
-		return ChannelResponse.from(channel, subscriberCount, subscribed, owner);
+		return ChannelResponse.from(channel, subscriberCount, subscribed, owner, myChannelRole);
+	}
+
+	public ChannelResponse getManagedChannel(String slug, Long ownerUserId) {
+		Channel channel = getActiveChannel(slug);
+
+		channelMemberService.validateOwner(channel.getChannelId(), ownerUserId);
+
+		return ChannelResponse.from(channel);
+	}
+
+	@Transactional
+	public ChannelResponse updateManagedChannel(String slug, Long ownerUserId, ChannelOwnerUpdateRequest request) {
+		Channel channel = getActiveChannel(slug);
+
+		channelMemberService.validateOwner(channel.getChannelId(), ownerUserId);
+
+		channel.updateOwnerInfo(request.getName().trim(), normalizeNullable(request.getDescription()));
+
+		return ChannelResponse.from(channel);
+	}
+
+	@Transactional
+	public ChannelResponse uploadManagedProfileImage(String slug, Long ownerUserId, MultipartFile file) {
+		Channel channel = getActiveChannel(slug);
+
+		channelMemberService.validateOwner(channel.getChannelId(), ownerUserId);
+
+		String oldImageUrl = channel.getProfileImageUrl();
+
+		ImageUploadResponse uploadResponse = imageUploadService.uploadChannelProfileImage(file);
+
+		channel.updateProfileImageUrl(uploadResponse.getImageUrl());
+
+		if (oldImageUrl != null && !oldImageUrl.equals(uploadResponse.getImageUrl())) {
+			imageUploadService.deleteImageByUrl(oldImageUrl);
+		}
+
+		return ChannelResponse.from(channel);
+	}
+
+	@Transactional
+	public ChannelResponse uploadManagedBannerImage(String slug, Long ownerUserId, MultipartFile file) {
+		Channel channel = getActiveChannel(slug);
+
+		channelMemberService.validateOwner(channel.getChannelId(), ownerUserId);
+
+		String oldImageUrl = channel.getBannerImageUrl();
+
+		ImageUploadResponse uploadResponse = imageUploadService.uploadChannelBannerImage(file);
+
+		channel.updateBannerImageUrl(uploadResponse.getImageUrl());
+
+		if (oldImageUrl != null && !oldImageUrl.equals(uploadResponse.getImageUrl())) {
+			imageUploadService.deleteImageByUrl(oldImageUrl);
+		}
+
+		return ChannelResponse.from(channel);
+	}
+
+	private Channel getActiveChannel(String slug) {
+		Channel channel = channelRepository.findBySlug(slug).orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+
+		if (!channel.isActive()) {
+			throw new BusinessException(ErrorCode.CHANNEL_NOT_ACTIVE);
+		}
+
+		return channel;
 	}
 }

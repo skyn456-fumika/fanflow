@@ -28,6 +28,8 @@ import {
   assignAdminChannelOwner,
   getAdminChannelMembers,
   removeAdminChannelOwner,
+  assignAdminChannelManager,
+  removeAdminChannelManager,
 } from '../../api/adminApi'
 import { getBoards } from '../../api/boardApi'
 import { getMyInfo } from '../../api/authApi'
@@ -127,6 +129,15 @@ function AdminPage() {
     description: '',
     sortOrder: 0,
   })
+
+  const [managerSearchKeyword, setManagerSearchKeyword] =
+    useState('')
+  const [managerSearchResults, setManagerSearchResults] =
+    useState([])
+  const [managerSearchLoading, setManagerSearchLoading] =
+    useState(false)
+  const [selectedManagerUser, setSelectedManagerUser] =
+    useState(null)
 
   const requireLogin = () => {
     if (!alertShownRef.current) {
@@ -1133,6 +1144,9 @@ function AdminPage() {
     setOwnerSearchKeyword('')
     setOwnerSearchResults([])
     setSelectedOwnerUser(null)
+    setManagerSearchKeyword('')
+    setManagerSearchResults([])
+    setSelectedManagerUser(null)
 
     await loadChannelMembers(channel.channelId)
   }
@@ -1261,6 +1275,127 @@ function AdminPage() {
       )
     } finally {
       setOwnerSearchLoading(false)
+    }
+  }
+
+  const handleManagerSearch = async (e) => {
+    e.preventDefault()
+
+    const normalizedKeyword =
+      managerSearchKeyword.trim()
+
+    if (!normalizedKeyword) {
+      alert('닉네임 또는 이메일을 입력해주세요.')
+      return
+    }
+
+    try {
+      setManagerSearchLoading(true)
+      setSelectedManagerUser(null)
+
+      const result = await getAdminUsers({
+        status: 'ACTIVE',
+        keyword: normalizedKeyword,
+        page: 0,
+        size: 10,
+      })
+
+      if (result.success) {
+        const registeredIds = new Set(
+          channelMembers.map(
+            (member) => member.userId,
+          ),
+        )
+
+        setManagerSearchResults(
+          (result.data.content || []).filter(
+            (user) => !registeredIds.has(user.userId),
+          ),
+        )
+      }
+    } catch (error) {
+      console.error(error)
+      setManagerSearchResults([])
+
+      alert(
+        error.response?.data?.message ||
+          '회원 검색에 실패했습니다.',
+      )
+    } finally {
+      setManagerSearchLoading(false)
+    }
+  }
+
+  const handleAssignChannelManager = async () => {
+    if (
+      !selectedChannelForMembers ||
+      !selectedManagerUser
+    ) {
+      alert('매니저로 지정할 회원을 선택해주세요.')
+      return
+    }
+
+    try {
+      const result =
+        await assignAdminChannelManager(
+          selectedChannelForMembers.channelId,
+          selectedManagerUser.userId,
+        )
+
+      if (result.success) {
+        alert('채널 매니저가 지정되었습니다.')
+
+        setManagerSearchKeyword('')
+        setManagerSearchResults([])
+        setSelectedManagerUser(null)
+
+        await loadChannelMembers(
+          selectedChannelForMembers.channelId,
+        )
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '채널 매니저 지정에 실패했습니다.',
+      )
+    }
+  }
+
+  const handleRemoveChannelManager = async (
+    userId,
+  ) => {
+    if (
+      !selectedChannelForMembers ||
+      !window.confirm(
+        '채널 매니저 권한을 해제하시겠습니까?',
+      )
+    ) {
+      return
+    }
+
+    try {
+      const result =
+        await removeAdminChannelManager(
+          selectedChannelForMembers.channelId,
+          userId,
+        )
+
+      if (result.success) {
+        alert('채널 매니저가 해제되었습니다.')
+
+        await loadChannelMembers(
+          selectedChannelForMembers.channelId,
+        )
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '채널 매니저 해제에 실패했습니다.',
+      )
     }
   }
 
@@ -2327,6 +2462,9 @@ function AdminPage() {
                       setOwnerSearchKeyword('')
                       setOwnerSearchResults([])
                       setSelectedOwnerUser(null)
+                      setManagerSearchKeyword('')
+                      setManagerSearchResults([])
+                      setSelectedManagerUser(null)
                     }}
                   >
                     닫기
@@ -2381,6 +2519,20 @@ function AdminPage() {
                                       OWNER 해제
                                     </button>
                                   )}
+
+                                  {member.role === 'MANAGER' && (
+                                    <button
+                                      type="button"
+                                      className="admin-danger-button"
+                                      onClick={() =>
+                                        handleRemoveChannelManager(
+                                          member.userId,
+                                        )
+                                      }
+                                    >
+                                      매니저 해제
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -2393,6 +2545,13 @@ function AdminPage() {
                       (member) => member.role === 'OWNER',
                     ) && (
                       <div className="admin-channel-owner-search">
+                        <div className="admin-channel-member-subtitle">
+                          <h3>스트리머 지정</h3>
+                          <p>
+                            채널을 대표할 스트리머 계정을 검색하여 지정합니다.
+                          </p>
+                        </div>
+
                         <form
                           className="admin-channel-owner-form"
                           onSubmit={handleOwnerSearch}
@@ -2418,7 +2577,9 @@ function AdminPage() {
                             className="secondary-button"
                             disabled={ownerSearchLoading}
                           >
-                            {ownerSearchLoading ? '검색 중...' : '검색'}
+                            {ownerSearchLoading
+                              ? '검색 중...'
+                              : '검색'}
                           </button>
                         </form>
 
@@ -2437,7 +2598,9 @@ function AdminPage() {
                                       ? 'admin-owner-search-item selected'
                                       : 'admin-owner-search-item'
                                   }
-                                  onClick={() => setSelectedOwnerUser(user)}
+                                  onClick={() =>
+                                    setSelectedOwnerUser(user)
+                                  }
                                 >
                                   <div className="admin-owner-search-avatar">
                                     {user.profileImageUrl ? (
@@ -2491,6 +2654,118 @@ function AdminPage() {
                         )}
                       </div>
                     )}
+
+                    <div className="admin-channel-owner-search">
+                      <div className="admin-channel-member-subtitle">
+                        <h3>채널 매니저 추가</h3>
+                        <p>
+                          채널 운영을 도와줄 회원을 검색하여 지정합니다.
+                        </p>
+                      </div>
+
+                      <form
+                        className="admin-channel-owner-form"
+                        onSubmit={handleManagerSearch}
+                      >
+                        <div className="form-group">
+                          <label htmlFor="managerSearchKeyword">
+                            매니저 계정 검색
+                          </label>
+
+                          <input
+                            id="managerSearchKeyword"
+                            type="text"
+                            value={managerSearchKeyword}
+                            onChange={(e) =>
+                              setManagerSearchKeyword(e.target.value)
+                            }
+                            placeholder="닉네임 또는 이메일"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="secondary-button"
+                          disabled={managerSearchLoading}
+                        >
+                          {managerSearchLoading
+                            ? '검색 중...'
+                            : '검색'}
+                        </button>
+                      </form>
+
+                      {managerSearchResults.length > 0 && (
+                        <div className="admin-owner-search-results">
+                          {managerSearchResults.map((user) => {
+                            const selected =
+                              selectedManagerUser?.userId === user.userId
+
+                            return (
+                              <button
+                                key={user.userId}
+                                type="button"
+                                className={
+                                  selected
+                                    ? 'admin-owner-search-item selected'
+                                    : 'admin-owner-search-item'
+                                }
+                                onClick={() =>
+                                  setSelectedManagerUser(user)
+                                }
+                              >
+                                <div className="admin-owner-search-avatar">
+                                  {user.profileImageUrl ? (
+                                    <img
+                                      src={getImageUrl(user.profileImageUrl)}
+                                      alt={user.nickname}
+                                    />
+                                  ) : (
+                                    <span>
+                                      {user.nickname?.charAt(0) || '?'}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <strong>{user.nickname}</strong>
+                                  <span>{user.email}</span>
+                                </div>
+
+                                <small>회원 ID {user.userId}</small>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {!managerSearchLoading &&
+                        managerSearchKeyword.trim() &&
+                        managerSearchResults.length === 0 && (
+                          <div className="empty-box">
+                            지정 가능한 회원이 없습니다.
+                          </div>
+                        )}
+
+                      {selectedManagerUser && (
+                        <div className="admin-selected-owner">
+                          <div>
+                            <span>선택한 회원</span>
+                            <strong>
+                              {selectedManagerUser.nickname}
+                            </strong>
+                            <p>{selectedManagerUser.email}</p>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="primary-button"
+                            onClick={handleAssignChannelManager}
+                          >
+                            매니저 지정
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>

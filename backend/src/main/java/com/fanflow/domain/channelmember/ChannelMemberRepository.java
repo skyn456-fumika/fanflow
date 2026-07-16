@@ -36,4 +36,8 @@ public interface ChannelMemberRepository extends JpaRepository<ChannelMember, Lo
 			ORDER BY cm.createdAt ASC
 			""")
 	List<ChannelMember> findActiveChannelsByUserIdAndRole(@Param("userId") Long userId, @Param("role") ChannelMemberRole role);
+
+	boolean existsByChannel_ChannelIdAndUser_UserIdAndRole(Long channelId, Long userId, ChannelMemberRole role);
+
+	Optional<ChannelMember> findByChannel_ChannelIdAndUser_UserIdAndRole(Long channelId, Long userId, ChannelMemberRole role);
 }
