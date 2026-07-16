@@ -68,3 +68,23 @@ export const getMyCommentLikeStatus = async (commentId) => {
 
   return response.data
 }
+
+export const blindChannelComment = async (
+  commentId,
+) => {
+  const response = await axiosInstance.patch(
+    `/api/channel-management/comments/${commentId}/blind`,
+  )
+
+  return response.data
+}
+
+export const unblindChannelComment = async (
+  commentId,
+) => {
+  const response = await axiosInstance.patch(
+    `/api/channel-management/comments/${commentId}/unblind`,
+  )
+
+  return response.data
+}

@@ -90,3 +90,19 @@ export const createChannelPost = async ({
 
   return response.data
 }
+
+export const blindChannelPost = async (postId) => {
+  const response = await axiosInstance.patch(
+    `/api/channel-management/posts/${postId}/blind`,
+  )
+
+  return response.data
+}
+
+export const unblindChannelPost = async (postId) => {
+  const response = await axiosInstance.patch(
+    `/api/channel-management/posts/${postId}/unblind`,
+  )
+
+  return response.data
+}

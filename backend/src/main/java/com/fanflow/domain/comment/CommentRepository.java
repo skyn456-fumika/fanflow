@@ -19,10 +19,15 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			LEFT JOIN FETCH c.parent parent
 			LEFT JOIN FETCH parent.writer parentWriter
 			WHERE p.postId = :postId
-			  AND c.blind = false
 
 			  AND (
-			        :viewerId IS NULL
+			        :includeBlind = true
+			        OR c.blind = false
+			      )
+
+			  AND (
+			        :includeBlind = true
+			        OR :viewerId IS NULL
 			        OR NOT EXISTS (
 			             SELECT writerBlock.userBlockId
 			             FROM UserBlock writerBlock
@@ -33,6 +38,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
 			  AND (
 			        c.parent IS NULL
+			        OR :includeBlind = true
 			        OR :viewerId IS NULL
 			        OR NOT EXISTS (
 			             SELECT parentBlock.userBlockId
@@ -44,6 +50,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
 			  AND (
 			        c.parent IS NULL
+			        OR :includeBlind = true
 			        OR parent.blind = false
 			      )
 
@@ -56,23 +63,29 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			                  FROM Comment reply
 			                  WHERE reply.parent = c
 			                    AND reply.deleted = false
-			                    AND reply.blind = false
+			                    AND (
+			                          :includeBlind = true
+			                          OR reply.blind = false
+			                        )
 			             )
 			        )
 			      )
 
 			ORDER BY
 			  CASE
-			    WHEN c.parent IS NULL THEN c.commentId
+			    WHEN c.parent IS NULL
+			      THEN c.commentId
 			    ELSE c.parent.commentId
 			  END ASC,
 			  CASE
-			    WHEN c.parent IS NULL THEN 0
+			    WHEN c.parent IS NULL
+			      THEN 0
 			    ELSE 1
 			  END ASC,
 			  c.createdAt ASC
 			""")
-	List<Comment> findVisibleCommentsByPostId(@Param("postId") Long postId, @Param("viewerId") Long viewerId);
+	List<Comment> findVisibleCommentsByPostId(@Param("postId") Long postId, @Param("viewerId") Long viewerId,
+			@Param("includeBlind") boolean includeBlind);
 
 	@Query(value = """
 			SELECT c

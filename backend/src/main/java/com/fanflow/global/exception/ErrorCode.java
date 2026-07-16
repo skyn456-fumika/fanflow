@@ -35,6 +35,7 @@ public enum ErrorCode {
 	CHANNEL_MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 해당 채널의 운영자로 등록된 사용자입니다."),
 	CHANNEL_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "채널 운영자 정보를 찾을 수 없습니다."), CHANNEL_MANAGE_FORBIDDEN(HttpStatus.FORBIDDEN, "해당 채널을 관리할 권한이 없습니다."),
 	CHANNEL_MANAGER_NOT_FOUND(HttpStatus.NOT_FOUND, "채널 매니저 정보를 찾을 수 없습니다."),
+	CHANNEL_MODERATE_FORBIDDEN(HttpStatus.FORBIDDEN, "해당 채널의 콘텐츠를 관리할 권한이 없습니다."),
 
 	// Board / Post
 	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시판을 찾을 수 없습니다."), BOARD_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "비활성화된 게시판입니다."),

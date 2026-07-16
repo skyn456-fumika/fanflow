@@ -153,4 +153,20 @@ public class ChannelMemberService {
 				.filter(user -> !channelMemberRepository.existsByChannel_ChannelIdAndUser_UserId(channelId, user.getUserId()))
 				.map(ChannelManagerCandidateResponse::from).toList();
 	}
+
+	public boolean canModerate(Long channelId, Long userId) {
+		if (channelId == null || userId == null) {
+			return false;
+		}
+
+		ChannelMemberRole role = getUserRole(channelId, userId);
+
+		return role == ChannelMemberRole.OWNER || role == ChannelMemberRole.MANAGER;
+	}
+
+	public void validateModerator(Long channelId, Long userId) {
+		if (!canModerate(channelId, userId)) {
+			throw new BusinessException(ErrorCode.CHANNEL_MODERATE_FORBIDDEN);
+		}
+	}
 }

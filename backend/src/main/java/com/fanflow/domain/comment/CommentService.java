@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.channelmember.ChannelMemberService;
 import com.fanflow.domain.comment.dto.CommentCreateRequest;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.comment.dto.CommentUpdateRequest;
@@ -32,6 +33,7 @@ public class CommentService {
 	private final CommentLikeRepository commentLikeRepository;
 
 	private final NotificationService notificationService;
+	private final ChannelMemberService channelMemberService;
 
 	@Transactional
 	public CommentResponse createComment(Long postId, Long userId, CommentCreateRequest request) {
@@ -57,14 +59,22 @@ public class CommentService {
 	public List<CommentResponse> getComments(Long postId, Long userId) {
 		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
-		if (post.isDeleted() || post.isBlind()) {
+		if (post.isDeleted()) {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 		}
 
-		List<Comment> comments = commentRepository.findVisibleCommentsByPostId(postId, userId);
+		Long channelId = post.getBoard().getChannel().getChannelId();
+
+		boolean manageableByMe = channelMemberService.canModerate(channelId, userId);
+
+		if (post.isBlind() && !manageableByMe) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		List<Comment> comments = commentRepository.findVisibleCommentsByPostId(postId, userId, manageableByMe);
 
 		if (userId == null || comments.isEmpty()) {
-			return comments.stream().map(CommentResponse::from).toList();
+			return comments.stream().map(comment -> CommentResponse.from(comment, false, manageableByMe)).toList();
 		}
 
 		List<Long> commentIds = comments.stream().filter(comment -> !comment.isDeleted()).map(Comment::getCommentId).toList();
@@ -72,7 +82,8 @@ public class CommentService {
 		Set<Long> likedCommentIds = new HashSet<>(commentLikeRepository.findByComment_CommentIdInAndUser_UserId(commentIds, userId).stream()
 				.map(commentLike -> commentLike.getComment().getCommentId()).toList());
 
-		return comments.stream().map(comment -> CommentResponse.from(comment, likedCommentIds.contains(comment.getCommentId()))).toList();
+		return comments.stream().map(comment -> CommentResponse.from(comment, likedCommentIds.contains(comment.getCommentId()), manageableByMe))
+				.toList();
 	}
 
 	@Transactional
@@ -151,5 +162,51 @@ public class CommentService {
 		notificationService.createReplyOnCommentNotification(parent.getWriter(), parent.getPost().getPostId(), savedReply.getCommentId(), writer);
 
 		return CommentResponse.from(savedReply);
+	}
+
+	@Transactional
+	public CommentResponse blindCommentByModerator(Long commentId, Long userId) {
+		Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+
+		if (comment.isDeleted()) {
+			throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+		}
+
+		Post post = comment.getPost();
+
+		if (post.isDeleted()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		Long channelId = post.getBoard().getChannel().getChannelId();
+
+		channelMemberService.validateModerator(channelId, userId);
+
+		comment.blind();
+
+		return CommentResponse.from(comment, false, true);
+	}
+
+	@Transactional
+	public CommentResponse unblindCommentByModerator(Long commentId, Long userId) {
+		Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+
+		if (comment.isDeleted()) {
+			throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+		}
+
+		Post post = comment.getPost();
+
+		if (post.isDeleted()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		Long channelId = post.getBoard().getChannel().getChannelId();
+
+		channelMemberService.validateModerator(channelId, userId);
+
+		comment.unblind();
+
+		return CommentResponse.from(comment, false, true);
 	}
 }

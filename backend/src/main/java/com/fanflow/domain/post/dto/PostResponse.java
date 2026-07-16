@@ -42,7 +42,13 @@ public class PostResponse {
 
 	private String writerProfileImageUrl;
 
+	private boolean manageableByMe;
+
 	public static PostResponse from(Post post) {
+		return from(post, false);
+	}
+
+	public static PostResponse from(Post post, boolean manageableByMe) {
 		return PostResponse.builder().postId(post.getPostId()).channelId(post.getBoard().getChannel().getChannelId())
 				.channelName(post.getBoard().getChannel().getName()).channelSlug(post.getBoard().getChannel().getSlug())
 				.boardId(post.getBoard().getBoardId()).boardCode(post.getBoard().getCode()).boardName(post.getBoard().getName())
@@ -50,6 +56,6 @@ public class PostResponse {
 				.writerProfileImageUrl(post.getWriter().getProfileImageUrl()).title(post.getTitle()).content(post.getContent())
 				.viewCount(post.getViewCount()).likeCount(post.getLikeCount()).commentCount(post.getCommentCount()).notice(post.isNotice())
 				.blind(post.isBlind()).deleted(post.isDeleted()).createdAt(post.getCreatedAt()).updatedAt(post.getUpdatedAt())
-				.thumbnailUrl(post.getThumbnailUrl()).build();
+				.thumbnailUrl(post.getThumbnailUrl()).manageableByMe(manageableByMe).build();
 	}
 }

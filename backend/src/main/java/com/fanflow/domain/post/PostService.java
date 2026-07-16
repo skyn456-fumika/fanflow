@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fanflow.domain.block.UserBlockRepository;
 import com.fanflow.domain.board.Board;
 import com.fanflow.domain.board.BoardRepository;
+import com.fanflow.domain.channelmember.ChannelMemberService;
 import com.fanflow.domain.image.ImageFileService;
 import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.dto.PostCreateRequest;
@@ -40,6 +41,7 @@ public class PostService {
 	private final HtmlSanitizer htmlSanitizer;
 	private final ImageFileService imageFileService;
 	private final NotificationService notificationService;
+	private final ChannelMemberService channelMemberService;
 
 	private static final String DEFAULT_CHANNEL_SLUG = "fumika";
 
@@ -138,20 +140,30 @@ public class PostService {
 	public PostResponse getPost(Long postId, Long viewerId) {
 		Post post = postRepository.findDetailById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
-		if (post.isDeleted() || post.isBlind()) {
+		if (post.isDeleted()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		Long channelId = post.getBoard().getChannel().getChannelId();
+
+		boolean manageableByMe = channelMemberService.canModerate(channelId, viewerId);
+
+		if (post.isBlind() && !manageableByMe) {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 		}
 
 		boolean officialNotice = post.isNotice() && post.getWriter().isAdmin();
 
-		if (!officialNotice && viewerId != null && !viewerId.equals(post.getWriter().getUserId())
+		if (!officialNotice && !manageableByMe && viewerId != null && !viewerId.equals(post.getWriter().getUserId())
 				&& userBlockRepository.existsByBlocker_UserIdAndBlocked_UserId(viewerId, post.getWriter().getUserId())) {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 		}
 
-		post.increaseViewCount();
+		if (!post.isBlind()) {
+			post.increaseViewCount();
+		}
 
-		return PostResponse.from(post);
+		return PostResponse.from(post, manageableByMe);
 	}
 
 	@Transactional
@@ -205,5 +217,39 @@ public class PostService {
 		imageFileService.deleteImagesFromHtml(post.getContent());
 
 		post.delete();
+	}
+
+	@Transactional
+	public PostResponse blindPostByModerator(Long postId, Long userId) {
+		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+
+		if (post.isDeleted()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		Long channelId = post.getBoard().getChannel().getChannelId();
+
+		channelMemberService.validateModerator(channelId, userId);
+
+		post.blind();
+
+		return PostResponse.from(post, true);
+	}
+
+	@Transactional
+	public PostResponse unblindPostByModerator(Long postId, Long userId) {
+		Post post = postRepository.findById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+
+		if (post.isDeleted()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		Long channelId = post.getBoard().getChannel().getChannelId();
+
+		channelMemberService.validateModerator(channelId, userId);
+
+		post.unblind();
+
+		return PostResponse.from(post, true);
 	}
 }

@@ -5,14 +5,21 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom'
-import { deletePost, getPostDetail } from '../../api/postApi'
 import {
+  blindChannelPost,
+  deletePost,
+  getPostDetail,
+  unblindChannelPost,
+} from '../../api/postApi'
+import {
+  blindChannelComment,
   createComment,
   createReply,
   deleteComment,
   getComments,
   likeComment,
   unlikeComment,
+  unblindChannelComment,
   updateComment,
 } from '../../api/commentApi'
 import { getMyLikeStatus, likePost, unlikePost } from '../../api/likeApi'
@@ -362,6 +369,46 @@ function PostDetailPage() {
         error.response?.data?.message || '게시글 삭제에 실패했습니다.'
 
       alert(message)
+    }
+  }
+
+  const handleTogglePostBlind = async () => {
+    const actionText = post.blind
+      ? '블라인드를 해제'
+      : '블라인드 처리'
+
+    if (
+      !window.confirm(
+        `이 게시글을 ${actionText}하시겠습니까?`,
+      )
+    ) {
+      return
+    }
+
+    try {
+      const result = post.blind
+        ? await unblindChannelPost(post.postId)
+        : await blindChannelPost(post.postId)
+
+      if (result.success) {
+        setPost(result.data)
+
+        if (!result.data.blind) {
+          await loadComments()
+        }
+      } else {
+        alert(
+          result.message ||
+            '게시글 관리에 실패했습니다.',
+        )
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '게시글 관리에 실패했습니다.',
+      )
     }
   }
 
@@ -862,6 +909,46 @@ function PostDetailPage() {
     }
   }
 
+  const handleToggleCommentBlind = async (comment) => {
+    const actionText = comment.blind
+      ? '블라인드를 해제'
+      : '블라인드 처리'
+
+    if (
+      !window.confirm(
+        `이 댓글을 ${actionText}하시겠습니까?`,
+      )
+    ) {
+      return
+    }
+
+    try {
+      const result = comment.blind
+        ? await unblindChannelComment(
+            comment.commentId,
+          )
+        : await blindChannelComment(
+            comment.commentId,
+          )
+
+      if (result.success) {
+        await loadComments()
+      } else {
+        alert(
+          result.message ||
+            '댓글 관리에 실패했습니다.',
+        )
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '댓글 관리에 실패했습니다.',
+      )
+    }
+  }
+
   return (
     <div>
       <div className="page-title-row">
@@ -964,15 +1051,36 @@ function PostDetailPage() {
             <>
               <button
                 type="button"
-                onClick={() => navigate(`/posts/${postId}/edit`)}
+                onClick={() =>
+                  navigate(`/posts/${postId}/edit`)
+                }
               >
                 수정
               </button>
 
-              <button type="button" onClick={handleDeletePost}>
+              <button
+                type="button"
+                onClick={handleDeletePost}
+              >
                 삭제
               </button>
             </>
+          )}
+
+          {post.manageableByMe && !post.deleted && (
+            <button
+              type="button"
+              className={
+                post.blind
+                  ? 'moderation-restore-button'
+                  : 'moderation-blind-button'
+              }
+              onClick={handleTogglePostBlind}
+            >
+              {post.blind
+                ? '블라인드 해제'
+                : '운영진 블라인드'}
+            </button>
           )}
 
           <button type="button" onClick={handleReportPost}>
@@ -1205,12 +1313,35 @@ function PostDetailPage() {
                           onClick={() =>
                             handleDeleteComment(comment.commentId)
                           }
-                          disabled={commentUpdating || replySubmitting}
+                          disabled={
+                            commentUpdating ||
+                            replySubmitting
+                          }
                         >
                           삭제
                         </button>
                       </>
                     )}
+
+                    {comment.manageableByMe &&
+                      !comment.deleted &&
+                      editingCommentId !== comment.commentId && (
+                        <button
+                          type="button"
+                          className={
+                            comment.blind
+                              ? 'moderation-restore-button'
+                              : 'moderation-blind-button'
+                          }
+                          onClick={() =>
+                            handleToggleCommentBlind(comment)
+                          }
+                        >
+                          {comment.blind
+                            ? '블라인드 해제'
+                            : '운영진 블라인드'}
+                        </button>
+                      )}
 
                     {!comment.deleted &&
                       editingCommentId !== comment.commentId && (
