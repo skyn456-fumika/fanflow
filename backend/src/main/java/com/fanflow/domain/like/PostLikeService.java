@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fanflow.domain.like.dto.PostLikeResponse;
+import com.fanflow.domain.notification.NotificationService;
 import com.fanflow.domain.post.Post;
 import com.fanflow.domain.post.PostRepository;
 import com.fanflow.domain.user.User;
@@ -22,6 +23,8 @@ public class PostLikeService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 
+	private final NotificationService notificationService;
+
 	@Transactional
 	public PostLikeResponse likePost(Long postId, Long userId) {
 		Post post = getActivePost(postId);
@@ -36,6 +39,8 @@ public class PostLikeService {
 		postLikeRepository.save(postLike);
 		post.increaseLikeCount();
 
+		notificationService.createPostLikedNotification(post.getWriter(), post.getPostId(), user);
+
 		return PostLikeResponse.of(post.getPostId(), true, post.getLikeCount());
 	}
 
@@ -45,6 +50,8 @@ public class PostLikeService {
 
 		PostLike postLike = postLikeRepository.findByPost_PostIdAndUser_UserId(postId, userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.POST_LIKE_NOT_FOUND));
+
+		notificationService.deletePostLikedNotification(post.getWriter().getUserId(), post.getPostId(), userId);
 
 		postLikeRepository.delete(postLike);
 		post.decreaseLikeCount();

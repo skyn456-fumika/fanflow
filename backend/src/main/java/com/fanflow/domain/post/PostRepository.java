@@ -19,6 +19,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			JOIN FETCH p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
 			  AND (:boardCode IS NULL OR b.code = :boardCode)
 			  AND (
 			        :keyword IS NULL
@@ -29,8 +38,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			SELECT COUNT(p)
 			FROM Post p
 			JOIN p.board b
+			JOIN p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
 			  AND (:boardCode IS NULL OR b.code = :boardCode)
 			  AND (
 			        :keyword IS NULL
@@ -38,7 +57,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			        OR p.content LIKE CONCAT('%', :keyword, '%')
 			      )
 			""")
-	Page<Post> searchPosts(@Param("boardCode") String boardCode, @Param("keyword") String keyword, Pageable pageable);
+	Page<Post> searchPosts(@Param("viewerId") Long viewerId, @Param("boardCode") String boardCode, @Param("keyword") String keyword,
+			Pageable pageable);
 
 	@Query(value = """
 			SELECT p
@@ -179,6 +199,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			  AND b.active = true
 			  AND p.deleted = false
 			  AND p.blind = false
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
 			  AND (:boardCode IS NULL OR b.code = :boardCode)
 			  AND (
 			        :keyword IS NULL
@@ -190,11 +219,21 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			FROM Post p
 			JOIN p.board b
 			JOIN b.channel c
+			JOIN p.writer w
 			WHERE c.slug = :channelSlug
 			  AND c.active = true
 			  AND b.active = true
 			  AND p.deleted = false
 			  AND p.blind = false
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :viewerId
+			               AND ub.blocked = w
+			        )
+			      )
 			  AND (:boardCode IS NULL OR b.code = :boardCode)
 			  AND (
 			        :keyword IS NULL
@@ -202,8 +241,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			        OR p.content LIKE CONCAT('%', :keyword, '%')
 			      )
 			""")
-	Page<Post> searchPostsByChannel(@Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode, @Param("keyword") String keyword,
-			Pageable pageable);
+	Page<Post> searchPostsByChannel(@Param("viewerId") Long viewerId, @Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode,
+			@Param("keyword") String keyword, Pageable pageable);
 
 	@Query("""
 			SELECT p
@@ -282,6 +321,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			        OR p.title LIKE CONCAT('%', :keyword, '%')
 			        OR p.content LIKE CONCAT('%', :keyword, '%')
 			      )
+			  AND NOT EXISTS (
+			      SELECT ub.userBlockId
+			      FROM UserBlock ub
+			      WHERE ub.blocker.userId = :userId
+			        AND ub.blocked = w
+			  )
 			  AND EXISTS (
 			      SELECT 1
 			      FROM ChannelSubscription cs
@@ -293,6 +338,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			FROM Post p
 			JOIN p.board b
 			JOIN b.channel c
+			JOIN p.writer w
 			WHERE p.deleted = false
 			  AND p.blind = false
 			  AND c.active = true
@@ -304,6 +350,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			        OR p.title LIKE CONCAT('%', :keyword, '%')
 			        OR p.content LIKE CONCAT('%', :keyword, '%')
 			      )
+			  AND NOT EXISTS (
+			      SELECT ub.userBlockId
+			      FROM UserBlock ub
+			      WHERE ub.blocker.userId = :userId
+			        AND ub.blocked = w
+			  )
 			  AND EXISTS (
 			      SELECT 1
 			      FROM ChannelSubscription cs

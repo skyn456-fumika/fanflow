@@ -16,7 +16,11 @@ public enum ErrorCode {
 	EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 사용 중인 이메일입니다."), NICKNAME_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다."),
 	LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."), USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
 	USER_NOT_ACTIVE(HttpStatus.FORBIDDEN, "이용할 수 없는 계정입니다."), PASSWORD_NOT_MATCHED(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다."),
-	CANNOT_BLOCK_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 정지할 수 없습니다."), CANNOT_ACTIVATE_DELETED_USER(HttpStatus.BAD_REQUEST, "탈퇴한 회원은 활성화할 수 없습니다."),
+	CANNOT_BLOCK_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 차단할 수 없습니다."),
+
+	USER_ALREADY_BLOCKED(HttpStatus.CONFLICT, "이미 차단한 사용자입니다."),
+
+	USER_BLOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 차단 정보를 찾을 수 없습니다."), CANNOT_ACTIVATE_DELETED_USER(HttpStatus.BAD_REQUEST, "탈퇴한 회원은 활성화할 수 없습니다."),
 
 	// Auth
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."), FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),

@@ -1,12 +1,24 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getUserComments,
   getUserPosts,
   getUserProfile,
 } from '../../api/userApi'
+import { getMyInfo } from '../../api/authApi'
+import {
+  blockUser,
+  getUserBlockStatus,
+  unblockUser,
+} from '../../api/userBlockApi'
 
 function UserProfilePage() {
+  const navigate = useNavigate()
+
+  const [me, setMe] = useState(null)
+  const [blocked, setBlocked] = useState(false)
+  const [blockLoading, setBlockLoading] = useState(false)
+
   const { userId } = useParams()
 
   const [profile, setProfile] = useState(null)
@@ -113,6 +125,53 @@ function UserProfilePage() {
     }
   }
 
+  const loadMyInfo = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      setMe(null)
+      setBlocked(false)
+      return
+    }
+
+    try {
+      const result = await getMyInfo()
+
+      if (result.success) {
+        setMe(result.data)
+      }
+    } catch (error) {
+      console.error(error)
+      setMe(null)
+      setBlocked(false)
+    }
+  }
+
+  const loadBlockStatus = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token || !me || !profile) {
+      setBlocked(false)
+      return
+    }
+
+    if (me.userId === profile.userId) {
+      setBlocked(false)
+      return
+    }
+
+    try {
+      const result = await getUserBlockStatus(profile.userId)
+
+      if (result.success) {
+        setBlocked(result.data.blocked)
+      }
+    } catch (error) {
+      console.error(error)
+      setBlocked(false)
+    }
+  }
+
   useEffect(() => {
     setProfile(null)
     setPosts([])
@@ -120,7 +179,10 @@ function UserProfilePage() {
     setPostPage(0)
     setCommentPage(0)
     setActiveTab('posts')
+    setBlocked(false)
+
     loadProfile()
+    loadMyInfo()
   }, [userId])
 
   useEffect(() => {
@@ -137,6 +199,14 @@ function UserProfilePage() {
     }
   }, [profile, activeTab, postPage, commentPage])
 
+  useEffect(() => {
+    if (!profile || !me) {
+      return
+    }
+
+    loadBlockStatus()
+  }, [profile, me])
+
   const handleTabChange = (tab) => {
     setActiveTab(tab)
 
@@ -146,6 +216,78 @@ function UserProfilePage() {
 
     if (tab === 'comments') {
       setCommentPage(0)
+    }
+  }
+
+  const handleBlockClick = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+
+      navigate('/login', {
+        state: {
+          from: `/users/${userId}`,
+        },
+      })
+
+      return
+    }
+
+    const confirmMessage = blocked
+      ? '이 사용자의 차단을 해제하시겠습니까?'
+      : '이 사용자를 차단하시겠습니까?'
+
+    if (!window.confirm(confirmMessage)) {
+      return
+    }
+
+    if (blockLoading) {
+      return
+    }
+
+    try {
+      setBlockLoading(true)
+
+      const result = blocked
+        ? await unblockUser(profile.userId)
+        : await blockUser(profile.userId)
+
+      if (result.success) {
+        setBlocked(result.data.blocked)
+
+        window.dispatchEvent(
+          new Event('notification-change'),
+        )
+      } else {
+        alert(
+          result.message ||
+            '사용자 차단 처리에 실패했습니다.',
+        )
+      }
+    } catch (error) {
+      console.error(error)
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        alert('로그인이 필요합니다.')
+
+        navigate('/login', {
+          replace: true,
+          state: {
+            from: `/users/${userId}`,
+          },
+        })
+
+        return
+      }
+
+      alert(
+        error.response?.data?.message ||
+          '사용자 차단 처리에 실패했습니다.',
+      )
+    } finally {
+      setBlockLoading(false)
     }
   }
 
@@ -180,8 +322,31 @@ function UserProfilePage() {
         </div>
 
         <div className="user-profile-info">
-          <strong>{profile.nickname}</strong>
-          <p>가입일 {profile.createdAt}</p>
+          <div className="user-profile-info-header">
+            <div>
+              <strong>{profile.nickname}</strong>
+              <p>가입일 {profile.createdAt}</p>
+            </div>
+
+            {me && me.userId !== profile.userId && (
+              <button
+                type="button"
+                className={
+                  blocked
+                    ? 'secondary-button'
+                    : 'danger-button'
+                }
+                onClick={handleBlockClick}
+                disabled={blockLoading}
+              >
+                {blockLoading
+                  ? '처리 중...'
+                  : blocked
+                    ? '차단 해제'
+                    : '사용자 차단'}
+              </button>
+            )}
+          </div>
 
           <div className="user-profile-stats">
             <div>

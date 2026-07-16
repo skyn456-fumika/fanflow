@@ -15,6 +15,10 @@ import {
   updateChannelNotification,
 } from '../../api/channelApi'
 import { getMyBookmarks } from '../../api/bookmarkApi'
+import {
+  getMyBlockedUsers,
+  unblockUser,
+} from '../../api/userBlockApi'
 
 function MyPage() {
   const location = useLocation()
@@ -56,7 +60,15 @@ function MyPage() {
   const [mySubscribedChannels, setMySubscribedChannels] = useState([])
 
   const [notificationUpdatingChannelId, setNotificationUpdatingChannelId] =
-  useState(null)
+    useState(null)
+
+  const [myBlockedUsers, setMyBlockedUsers] = useState([])
+  const [myBlockedUsersPageInfo, setMyBlockedUsersPageInfo] =
+    useState(null)
+  const [myBlockedUsersPage, setMyBlockedUsersPage] = useState(0)
+
+  const [unblockingUserId, setUnblockingUserId] =
+    useState(null)
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) {
@@ -235,42 +247,28 @@ function MyPage() {
     }
   }
 
-  const handleChannelNotificationChange = async (
-    channel,
-    notificationEnabled,
-  ) => {
+  const loadMyBlockedUsers = async () => {
     try {
-      setNotificationUpdatingChannelId(channel.channelId)
+      setActivityLoading(true)
 
-      const result = await updateChannelNotification(
-        channel.slug,
-        notificationEnabled,
-      )
+      const result = await getMyBlockedUsers({
+        page: myBlockedUsersPage,
+        size: 5,
+      })
 
       if (result.success) {
-        setMySubscribedChannels((prev) =>
-          prev.map((item) =>
-            item.channelId === channel.channelId
-              ? {
-                  ...item,
-                  notificationEnabled:
-                    result.data.notificationEnabled,
-                }
-              : item,
-          ),
-        )
-      } else {
-        alert(result.message || '새 글 알림 설정 변경에 실패했습니다.')
+        setMyBlockedUsers(result.data.content || [])
+        setMyBlockedUsersPageInfo(result.data)
       }
     } catch (error) {
       console.error(error)
 
-      alert(
-        error.response?.data?.message ||
-          '새 글 알림 설정 변경에 실패했습니다.',
-      )
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        requireLogin()
+      }
     } finally {
-      setNotificationUpdatingChannelId(null)
+      setActivityLoading(false)
     }
   }
 
@@ -302,6 +300,10 @@ function MyPage() {
     if (activeTab === 'channels') {
       loadMySubscribedChannels()
     }
+
+    if (activeTab === 'blocks') {
+      loadMyBlockedUsers()
+    }
   }, [
     user,
     activeTab,
@@ -309,6 +311,7 @@ function MyPage() {
     myCommentsPage,
     myLikedPostsPage,
     myBookmarkedPostsPage,
+    myBlockedUsersPage,
   ])
 
   const handleNicknameSubmit = async (e) => {
@@ -451,6 +454,10 @@ function MyPage() {
     if (tab === 'channels') {
       setMySubscribedChannels([])
     }
+
+    if (tab === 'blocks') {
+      setMyBlockedUsersPage(0)
+    }
   }
 
   const handleProfileImageChange = async (e) => {
@@ -484,6 +491,95 @@ function MyPage() {
       alert(error.response?.data?.message || '프로필 이미지 변경에 실패했습니다.')
     } finally {
       e.target.value = ''
+    }
+  }
+
+  const handleChannelNotificationChange = async (
+    channel,
+    notificationEnabled,
+  ) => {
+    try {
+      setNotificationUpdatingChannelId(channel.channelId)
+
+      const result = await updateChannelNotification(
+        channel.slug,
+        notificationEnabled,
+      )
+
+      if (result.success) {
+        setMySubscribedChannels((prev) =>
+          prev.map((item) =>
+            item.channelId === channel.channelId
+              ? {
+                  ...item,
+                  notificationEnabled:
+                    result.data.notificationEnabled,
+                }
+              : item,
+          ),
+        )
+      } else {
+        alert(result.message || '새 글 알림 설정 변경에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '새 글 알림 설정 변경에 실패했습니다.',
+      )
+    } finally {
+      setNotificationUpdatingChannelId(null)
+    }
+  }
+
+  const handleUnblockUser = async (blockedUser) => {
+    if (
+      !window.confirm(
+        `${blockedUser.nickname}님의 차단을 해제하시겠습니까?`,
+      )
+    ) {
+      return
+    }
+
+    try {
+      setUnblockingUserId(blockedUser.userId)
+
+      const result = await unblockUser(blockedUser.userId)
+
+      if (!result.success) {
+        alert(
+          result.message ||
+            '차단 해제에 실패했습니다.',
+        )
+        return
+      }
+
+      const remainingUsers = myBlockedUsers.filter(
+        (user) => user.userId !== blockedUser.userId,
+      )
+
+      setMyBlockedUsers(remainingUsers)
+
+      if (remainingUsers.length === 0 && myBlockedUsersPage > 0) {
+        setMyBlockedUsersPage((prev) => prev - 1)
+        return
+      }
+
+      await loadMyBlockedUsers()
+
+      window.dispatchEvent(
+        new Event('notification-change'),
+      )
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        error.response?.data?.message ||
+          '차단 해제에 실패했습니다.',
+      )
+    } finally {
+      setUnblockingUserId(null)
     }
   }
 
@@ -693,6 +789,14 @@ function MyPage() {
             onClick={() => handleTabChange('bookmarks')}
           >
             북마크한 게시글
+          </button>
+
+          <button
+            type="button"
+            className={activeTab === 'blocks' ? 'active' : ''}
+            onClick={() => handleTabChange('blocks')}
+          >
+            차단 사용자
           </button>
         </div>
 
@@ -1003,6 +1107,97 @@ function MyPage() {
                         disabled={myBookmarkedPostsPageInfo.last}
                         onClick={() =>
                           setMyBookmarkedPostsPage((prev) => prev + 1)
+                        }
+                      >
+                        다음
+                      </button>
+                    </div>
+                  )}
+              </div>
+            )}
+
+            {activeTab === 'blocks' && (
+              <div className="blocked-user-list">
+                {myBlockedUsers.length === 0 ? (
+                  <div className="empty-box">
+                    차단한 사용자가 없습니다.
+                  </div>
+                ) : (
+                  myBlockedUsers.map((blockedUser) => (
+                    <div
+                      key={blockedUser.userId}
+                      className="blocked-user-item"
+                    >
+                      <Link
+                        to={`/users/${blockedUser.userId}`}
+                        className="blocked-user-profile"
+                      >
+                        <div className="profile-avatar">
+                          {blockedUser.profileImageUrl ? (
+                            <img
+                              src={getImageUrl(
+                                blockedUser.profileImageUrl,
+                              )}
+                              alt="프로필 이미지"
+                            />
+                          ) : (
+                            <span>
+                              {blockedUser.nickname?.charAt(0) || '?'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div>
+                          <strong>{blockedUser.nickname}</strong>
+                          <span>
+                            차단일 {blockedUser.blockedAt}
+                          </span>
+                        </div>
+                      </Link>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={
+                          unblockingUserId === blockedUser.userId
+                        }
+                        onClick={() =>
+                          handleUnblockUser(blockedUser)
+                        }
+                      >
+                        {unblockingUserId === blockedUser.userId
+                          ? '해제 중...'
+                          : '차단 해제'}
+                      </button>
+                    </div>
+                  ))
+                )}
+
+                {myBlockedUsersPageInfo &&
+                  !myBlockedUsersPageInfo.empty && (
+                    <div className="pagination">
+                      <button
+                        type="button"
+                        disabled={myBlockedUsersPageInfo.first}
+                        onClick={() =>
+                          setMyBlockedUsersPage((prev) =>
+                            Math.max(prev - 1, 0),
+                          )
+                        }
+                      >
+                        이전
+                      </button>
+
+                      <span>
+                        {myBlockedUsersPageInfo.page + 1} /{' '}
+                        {myBlockedUsersPageInfo.totalPages}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={myBlockedUsersPageInfo.last}
+                        onClick={() =>
+                          setMyBlockedUsersPage((prev) => prev + 1)
                         }
                       >
                         다음

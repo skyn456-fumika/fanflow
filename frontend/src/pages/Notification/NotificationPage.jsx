@@ -66,6 +66,11 @@ function NotificationPage() {
   }, [page])
 
   const getTypeLabel = (type) => {
+
+    if (type === 'POST_LIKED') {
+      return '게시글 좋아요'
+    }
+    
     if (type === 'COMMENT_ON_POST') {
       return '댓글'
     }

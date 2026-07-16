@@ -1,5 +1,6 @@
 package com.fanflow.domain.post;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,15 +36,21 @@ public class PostController {
 
 	@GetMapping("/api/posts")
 	public ApiResponse<PageResponse<PostListResponse>> getPosts(@RequestParam(required = false) String boardCode,
-			@RequestParam(required = false) String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-		PageResponse<PostListResponse> response = postService.getPosts(boardCode, keyword, page, size);
+			@RequestParam(required = false) String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+			Authentication authentication) {
+		Long viewerId = getViewerId(authentication);
+
+		PageResponse<PostListResponse> response = postService.getPosts(boardCode, keyword, page, size, viewerId);
 
 		return ApiResponse.success("게시글 목록 조회에 성공했습니다.", response);
 	}
 
 	@GetMapping("/api/posts/{postId}")
-	public ApiResponse<PostResponse> getPost(@PathVariable Long postId) {
-		PostResponse response = postService.getPost(postId);
+	public ApiResponse<PostResponse> getPost(@PathVariable Long postId, Authentication authentication) {
+		Long viewerId = getViewerId(authentication);
+
+		PostResponse response = postService.getPost(postId, viewerId);
+
 		return ApiResponse.success("게시글 상세 조회에 성공했습니다.", response);
 	}
 
@@ -72,9 +79,19 @@ public class PostController {
 	@GetMapping("/api/channels/{channelSlug}/posts")
 	public ApiResponse<PageResponse<PostListResponse>> getPostsByChannel(@PathVariable String channelSlug,
 			@RequestParam(required = false) String boardCode, @RequestParam(required = false) String keyword,
-			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-		PageResponse<PostListResponse> response = postService.getPostsByChannel(channelSlug, boardCode, keyword, page, size);
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, Authentication authentication) {
+		Long viewerId = getViewerId(authentication);
+
+		PageResponse<PostListResponse> response = postService.getPostsByChannel(channelSlug, boardCode, keyword, page, size, viewerId);
 
 		return ApiResponse.success("게시글 목록 조회에 성공했습니다.", response);
+	}
+
+	private Long getViewerId(Authentication authentication) {
+		if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+			return userDetails.getUserId();
+		}
+
+		return null;
 	}
 }

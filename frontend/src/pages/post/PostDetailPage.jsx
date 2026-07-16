@@ -173,7 +173,7 @@ function PostDetailPage() {
       await loadMyInfo()
     } catch (error) {
       console.error(error)
-      setErrorMessage('삭제되었거나 블라인드 처리된 게시글입니다.')
+      setErrorMessage('존재하지 않거나 접근할 수 없는 게시글입니다.')
     } finally {
       setLoading(false)
     }
@@ -291,7 +291,7 @@ function PostDetailPage() {
   }, [loading, comments, location.hash])
 
   useEffect(() => {
-    const handleAuthChange = () => {
+    const handleAuthChange = async () => {
       const token = localStorage.getItem('accessToken')
 
       if (!token) {
@@ -299,13 +299,7 @@ function PostDetailPage() {
         setLiked(false)
         setBookmarked(false)
 
-        setComments((prev) =>
-          prev.map((comment) => ({
-            ...comment,
-            likedByMe: false,
-          })),
-        )
-
+        await loadComments()
         return
       }
 

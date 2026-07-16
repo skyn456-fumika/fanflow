@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.block.UserBlockRepository;
 import com.fanflow.domain.channel.Channel;
 import com.fanflow.domain.channel.ChannelSubscriptionRepository;
 import com.fanflow.domain.notification.dto.NotificationResponse;
@@ -29,17 +30,18 @@ public class NotificationService {
 	private final NotificationRepository notificationRepository;
 	private final PostRepository postRepository;
 	private final ChannelSubscriptionRepository channelSubscriptionRepository;
+	private final UserBlockRepository userBlockRepository;
 
 	@Transactional
-	public void createCommentOnPostNotification(User receiver, Long postId, Long commentId, String commenterNickname) {
-		if (receiver == null || !receiver.isActive()) {
+	public void createCommentOnPostNotification(User receiver, Long postId, Long commentId, User actor) {
+		if (!canCreateUserNotification(receiver, actor)) {
 			return;
 		}
 
-		String message = commenterNickname + "님이 내 게시글에 댓글을 남겼습니다.";
+		String message = actor.getNickname() + "님이 내 게시글에 댓글을 남겼습니다.";
 
 		Notification notification = Notification.builder().receiver(receiver).type(NotificationType.COMMENT_ON_POST).message(message)
-				.targetPostId(postId).targetCommentId(commentId).build();
+				.targetPostId(postId).targetCommentId(commentId).actorUserId(actor.getUserId()).build();
 
 		notificationRepository.save(notification);
 	}
@@ -69,14 +71,13 @@ public class NotificationService {
 	}
 
 	public PageResponse<NotificationResponse> getMyNotifications(Long userId, Pageable pageable) {
-		Page<NotificationResponse> notifications = notificationRepository.findByReceiver_UserIdOrderByCreatedAtDesc(userId, pageable)
-				.map(this::toResponse);
+		Page<NotificationResponse> notifications = notificationRepository.findVisibleNotifications(userId, pageable).map(this::toResponse);
 
 		return PageResponse.from(notifications);
 	}
 
 	public NotificationUnreadCountResponse getUnreadCount(Long userId) {
-		long unreadCount = notificationRepository.countByReceiver_UserIdAndReadStatusFalse(userId);
+		long unreadCount = notificationRepository.countVisibleUnreadNotifications(userId);
 
 		return NotificationUnreadCountResponse.builder().unreadCount(unreadCount).build();
 	}
@@ -131,14 +132,23 @@ public class NotificationService {
 
 		List<User> receivers = channelSubscriptionRepository.findNotificationReceivers(channel.getChannelId(), writer.getUserId(), UserStatus.ACTIVE);
 
+		List<User> filteredReceivers = receivers.stream()
+				.filter(receiver -> !userBlockRepository.existsByBlocker_UserIdAndBlocked_UserId(receiver.getUserId(), writer.getUserId())).toList();
+
 		if (receivers.isEmpty()) {
+			return;
+
+		}
+		if (filteredReceivers.isEmpty()) {
 			return;
 		}
 
 		String message = channel.getName() + " 채널에 " + writer.getNickname() + "님이 새 게시글을 작성했습니다.";
 
-		List<Notification> notifications = receivers.stream().map(receiver -> Notification.builder().receiver(receiver)
-				.type(NotificationType.SUBSCRIBED_CHANNEL_NEW_POST).message(message).targetPostId(post.getPostId()).build()).toList();
+		List<Notification> notifications = filteredReceivers.stream()
+				.map(receiver -> Notification.builder().receiver(receiver).type(NotificationType.SUBSCRIBED_CHANNEL_NEW_POST).message(message)
+						.targetPostId(post.getPostId()).actorUserId(writer.getUserId()).build())
+				.toList();
 
 		notificationRepository.saveAll(notifications);
 	}
@@ -149,35 +159,26 @@ public class NotificationService {
 	}
 
 	@Transactional
-	public void createReplyOnCommentNotification(User receiver, Long postId, Long replyCommentId, String replyWriterNickname) {
-		if (receiver == null || !receiver.isActive()) {
+	public void createReplyOnCommentNotification(User receiver, Long postId, Long replyCommentId, User actor) {
+		if (!canCreateUserNotification(receiver, actor)) {
 			return;
 		}
 
-		String message = replyWriterNickname + "님이 내 댓글에 답글을 남겼습니다.";
+		String message = actor.getNickname() + "님이 내 댓글에 답글을 남겼습니다.";
 
 		Notification notification = Notification.builder().receiver(receiver).type(NotificationType.REPLY_ON_COMMENT).message(message)
-				.targetPostId(postId).targetCommentId(replyCommentId).build();
+				.targetPostId(postId).targetCommentId(replyCommentId).actorUserId(actor.getUserId()).build();
 
 		notificationRepository.save(notification);
 	}
 
 	@Transactional
 	public void createCommentLikedNotification(User receiver, Long postId, Long commentId, User actor) {
-		if (receiver == null || actor == null || !receiver.isActive()) {
+		if (!canCreateUserNotification(receiver, actor)) {
 			return;
 		}
 
-		if (receiver.getUserId().equals(actor.getUserId())) {
-			return;
-		}
-
-		boolean alreadyExists = notificationRepository.existsByReceiver_UserIdAndTypeAndTargetCommentIdAndActorUserId(receiver.getUserId(),
-				NotificationType.COMMENT_LIKED, commentId, actor.getUserId());
-
-		if (alreadyExists) {
-			return;
-		}
+		notificationRepository.deleteCommentLikeNotification(receiver.getUserId(), NotificationType.COMMENT_LIKED, commentId, actor.getUserId());
 
 		String message = actor.getNickname() + "님이 내 댓글을 좋아합니다.";
 
@@ -194,5 +195,44 @@ public class NotificationService {
 		}
 
 		notificationRepository.deleteCommentLikeNotification(receiverId, NotificationType.COMMENT_LIKED, commentId, actorUserId);
+	}
+
+	private boolean canCreateUserNotification(User receiver, User actor) {
+		if (receiver == null || actor == null || !receiver.isActive()) {
+			return false;
+		}
+
+		if (receiver.getUserId().equals(actor.getUserId())) {
+			return false;
+		}
+
+		boolean receiverBlockedActor = userBlockRepository.existsByBlocker_UserIdAndBlocked_UserId(receiver.getUserId(), actor.getUserId());
+
+		return !receiverBlockedActor;
+	}
+
+	@Transactional
+	public void createPostLikedNotification(User receiver, Long postId, User actor) {
+		if (!canCreateUserNotification(receiver, actor)) {
+			return;
+		}
+
+		notificationRepository.deletePostLikeNotification(receiver.getUserId(), NotificationType.POST_LIKED, postId, actor.getUserId());
+
+		String message = actor.getNickname() + "님이 내 게시글을 좋아합니다.";
+
+		Notification notification = Notification.builder().receiver(receiver).type(NotificationType.POST_LIKED).message(message).targetPostId(postId)
+				.actorUserId(actor.getUserId()).build();
+
+		notificationRepository.save(notification);
+	}
+
+	@Transactional
+	public void deletePostLikedNotification(Long receiverId, Long postId, Long actorUserId) {
+		if (receiverId == null || postId == null || actorUserId == null) {
+			return;
+		}
+
+		notificationRepository.deletePostLikeNotification(receiverId, NotificationType.POST_LIKED, postId, actorUserId);
 	}
 }

@@ -13,6 +13,53 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
 	long countByReceiver_UserIdAndReadStatusFalse(Long receiverId);
 
+	@Query(value = """
+			SELECT n
+			FROM Notification n
+			WHERE n.receiver.userId = :receiverId
+			  AND (
+			        n.actorUserId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :receiverId
+			               AND ub.blocked.userId = n.actorUserId
+			        )
+			      )
+			ORDER BY n.createdAt DESC
+			""", countQuery = """
+			SELECT COUNT(n)
+			FROM Notification n
+			WHERE n.receiver.userId = :receiverId
+			  AND (
+			        n.actorUserId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :receiverId
+			               AND ub.blocked.userId = n.actorUserId
+			        )
+			      )
+			""")
+	Page<Notification> findVisibleNotifications(@Param("receiverId") Long receiverId, Pageable pageable);
+
+	@Query("""
+			SELECT COUNT(n)
+			FROM Notification n
+			WHERE n.receiver.userId = :receiverId
+			  AND n.readStatus = false
+			  AND (
+			        n.actorUserId IS NULL
+			        OR NOT EXISTS (
+			             SELECT ub.userBlockId
+			             FROM UserBlock ub
+			             WHERE ub.blocker.userId = :receiverId
+			               AND ub.blocked.userId = n.actorUserId
+			        )
+			      )
+			""")
+	long countVisibleUnreadNotifications(@Param("receiverId") Long receiverId);
+
 	@Modifying(clearAutomatically = true)
 	@Query("""
 			UPDATE Notification n
@@ -33,7 +80,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 	boolean existsByReceiver_UserIdAndTypeAndTargetCommentIdAndActorUserId(Long receiverId, NotificationType type, Long targetCommentId,
 			Long actorUserId);
 
-	@Modifying(clearAutomatically = true)
+	@Modifying
 	@Query("""
 			DELETE FROM Notification n
 			WHERE n.receiver.userId = :receiverId
@@ -42,5 +89,18 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 			  AND n.actorUserId = :actorUserId
 			""")
 	int deleteCommentLikeNotification(@Param("receiverId") Long receiverId, @Param("type") NotificationType type, @Param("commentId") Long commentId,
+			@Param("actorUserId") Long actorUserId);
+
+	boolean existsByReceiver_UserIdAndTypeAndTargetPostIdAndActorUserId(Long receiverId, NotificationType type, Long targetPostId, Long actorUserId);
+
+	@Modifying
+	@Query("""
+			DELETE FROM Notification n
+			WHERE n.receiver.userId = :receiverId
+			  AND n.type = :type
+			  AND n.targetPostId = :postId
+			  AND n.actorUserId = :actorUserId
+			""")
+	int deletePostLikeNotification(@Param("receiverId") Long receiverId, @Param("type") NotificationType type, @Param("postId") Long postId,
 			@Param("actorUserId") Long actorUserId);
 }

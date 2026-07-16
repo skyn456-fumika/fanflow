@@ -20,10 +20,33 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			LEFT JOIN FETCH parent.writer parentWriter
 			WHERE p.postId = :postId
 			  AND c.blind = false
+
+			  AND (
+			        :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT writerBlock.userBlockId
+			             FROM UserBlock writerBlock
+			             WHERE writerBlock.blocker.userId = :viewerId
+			               AND writerBlock.blocked = w
+			        )
+			      )
+
+			  AND (
+			        c.parent IS NULL
+			        OR :viewerId IS NULL
+			        OR NOT EXISTS (
+			             SELECT parentBlock.userBlockId
+			             FROM UserBlock parentBlock
+			             WHERE parentBlock.blocker.userId = :viewerId
+			               AND parentBlock.blocked = parentWriter
+			        )
+			      )
+
 			  AND (
 			        c.parent IS NULL
 			        OR parent.blind = false
 			      )
+
 			  AND (
 			        c.deleted = false
 			        OR (
@@ -37,6 +60,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			             )
 			        )
 			      )
+
 			ORDER BY
 			  CASE
 			    WHEN c.parent IS NULL THEN c.commentId
@@ -48,7 +72,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			  END ASC,
 			  c.createdAt ASC
 			""")
-	List<Comment> findVisibleCommentsByPostId(@Param("postId") Long postId);
+	List<Comment> findVisibleCommentsByPostId(@Param("postId") Long postId, @Param("viewerId") Long viewerId);
 
 	@Query(value = """
 			SELECT c

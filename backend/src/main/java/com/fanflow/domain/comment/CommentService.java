@@ -49,10 +49,7 @@ public class CommentService {
 
 		post.increaseCommentCount();
 
-		if (!post.getWriter().getUserId().equals(writer.getUserId())) {
-			notificationService.createCommentOnPostNotification(post.getWriter(), post.getPostId(), savedComment.getCommentId(),
-					writer.getNickname());
-		}
+		notificationService.createCommentOnPostNotification(post.getWriter(), post.getPostId(), savedComment.getCommentId(), writer);
 
 		return CommentResponse.from(savedComment);
 	}
@@ -64,7 +61,7 @@ public class CommentService {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 		}
 
-		List<Comment> comments = commentRepository.findVisibleCommentsByPostId(postId);
+		List<Comment> comments = commentRepository.findVisibleCommentsByPostId(postId, userId);
 
 		if (userId == null || comments.isEmpty()) {
 			return comments.stream().map(CommentResponse::from).toList();
@@ -151,9 +148,7 @@ public class CommentService {
 
 		User parentWriter = parent.getWriter();
 
-		if (!parentWriter.getUserId().equals(writer.getUserId())) {
-			notificationService.createReplyOnCommentNotification(parentWriter, post.getPostId(), savedReply.getCommentId(), writer.getNickname());
-		}
+		notificationService.createReplyOnCommentNotification(parent.getWriter(), parent.getPost().getPostId(), savedReply.getCommentId(), writer);
 
 		return CommentResponse.from(savedReply);
 	}

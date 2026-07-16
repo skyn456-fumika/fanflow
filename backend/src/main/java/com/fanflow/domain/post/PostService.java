@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.block.UserBlockRepository;
 import com.fanflow.domain.board.Board;
 import com.fanflow.domain.board.BoardRepository;
 import com.fanflow.domain.image.ImageFileService;
@@ -34,6 +35,7 @@ public class PostService {
 	private final PostRepository postRepository;
 	private final BoardRepository boardRepository;
 	private final UserRepository userRepository;
+	private final UserBlockRepository userBlockRepository;
 
 	private final HtmlSanitizer htmlSanitizer;
 	private final ImageFileService imageFileService;
@@ -83,10 +85,18 @@ public class PostService {
 	}
 
 	public PageResponse<PostListResponse> getPosts(String boardCode, String keyword, int page, int size) {
-		return getPostsByChannel(DEFAULT_CHANNEL_SLUG, boardCode, keyword, page, size);
+		return getPosts(boardCode, keyword, page, size, null);
+	}
+
+	public PageResponse<PostListResponse> getPosts(String boardCode, String keyword, int page, int size, Long viewerId) {
+		return getPostsByChannel(DEFAULT_CHANNEL_SLUG, boardCode, keyword, page, size, viewerId);
 	}
 
 	public PageResponse<PostListResponse> getPostsByChannel(String channelSlug, String boardCode, String keyword, int page, int size) {
+		return getPostsByChannel(channelSlug, boardCode, keyword, page, size, null);
+	}
+
+	public PageResponse<PostListResponse> getPostsByChannel(String channelSlug, String boardCode, String keyword, int page, int size, Long viewerId) {
 		if (page < 0) {
 			page = 0;
 		}
@@ -105,8 +115,8 @@ public class PostService {
 		String normalizedBoardCode = normalize(boardCode);
 		String normalizedKeyword = normalize(keyword);
 
-		Page<PostListResponse> posts = postRepository.searchPostsByChannel(normalizedChannelSlug, normalizedBoardCode, normalizedKeyword, pageable)
-				.map(PostListResponse::from);
+		Page<PostListResponse> posts = postRepository
+				.searchPostsByChannel(viewerId, normalizedChannelSlug, normalizedBoardCode, normalizedKeyword, pageable).map(PostListResponse::from);
 
 		return PageResponse.from(posts);
 	}
@@ -121,9 +131,21 @@ public class PostService {
 
 	@Transactional
 	public PostResponse getPost(Long postId) {
+		return getPost(postId, null);
+	}
+
+	@Transactional
+	public PostResponse getPost(Long postId, Long viewerId) {
 		Post post = postRepository.findDetailById(postId).orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
 		if (post.isDeleted() || post.isBlind()) {
+			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+		}
+
+		boolean officialNotice = post.isNotice() && post.getWriter().isAdmin();
+
+		if (!officialNotice && viewerId != null && !viewerId.equals(post.getWriter().getUserId())
+				&& userBlockRepository.existsByBlocker_UserIdAndBlocked_UserId(viewerId, post.getWriter().getUserId())) {
 			throw new BusinessException(ErrorCode.POST_NOT_FOUND);
 		}
 
