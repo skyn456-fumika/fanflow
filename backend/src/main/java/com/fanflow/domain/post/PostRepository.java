@@ -415,4 +415,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 			""")
 	Page<Post> findSubscriptionFeedPosts(@Param("userId") Long userId, @Param("channelSlug") String channelSlug, @Param("boardCode") String boardCode,
 			@Param("keyword") String keyword, Pageable pageable);
+
+	@Query("""
+			SELECT p
+			FROM Post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel c
+			JOIN FETCH p.writer w
+			WHERE c.slug = :channelSlug
+			  AND c.active = true
+			  AND p.deleted = false
+			  AND p.blind = true
+			ORDER BY p.createdAt DESC
+			""")
+	List<Post> findBlindPostsByChannelSlug(@Param("channelSlug") String channelSlug);
 }

@@ -1,5 +1,6 @@
 package com.fanflow.domain.post;
 
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fanflow.domain.block.UserBlockRepository;
 import com.fanflow.domain.board.Board;
 import com.fanflow.domain.board.BoardRepository;
+import com.fanflow.domain.channel.Channel;
 import com.fanflow.domain.channelmember.ChannelMemberService;
 import com.fanflow.domain.image.ImageFileService;
 import com.fanflow.domain.notification.NotificationService;
@@ -251,5 +253,13 @@ public class PostService {
 		post.unblind();
 
 		return PostResponse.from(post, true);
+	}
+
+	public List<PostListResponse> getBlindPostsByModerator(String channelSlug, Long userId) {
+		Channel channel = channelMemberService.getActiveChannel(channelSlug);
+
+		channelMemberService.validateModerator(channel.getChannelId(), userId);
+
+		return postRepository.findBlindPostsByChannelSlug(channelSlug).stream().map(PostListResponse::from).toList();
 	}
 }

@@ -324,6 +324,18 @@ function ChannelHomePage() {
                   채널 관리
                 </Link>
               )}
+
+              {(
+                channel.myChannelRole === 'OWNER' ||
+                channel.myChannelRole === 'MANAGER'
+              ) && (
+                <Link
+                  to={`/channels/${channel.slug}/moderation`}
+                  className="secondary-button"
+                >
+                  콘텐츠 관리
+                </Link>
+              )}
               <Link
                 to={`/channels/${channel.slug}/posts`}
                 className="primary-button"

@@ -184,4 +184,21 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 			  AND p.blind = false
 			""")
 	long countPublicCommentsByUserId(@Param("userId") Long userId);
+
+	@Query("""
+			SELECT c
+			FROM Comment c
+			JOIN FETCH c.post p
+			JOIN FETCH p.board b
+			JOIN FETCH b.channel ch
+			JOIN FETCH c.writer w
+			LEFT JOIN FETCH c.parent parent
+			WHERE ch.slug = :channelSlug
+			  AND ch.active = true
+			  AND c.deleted = false
+			  AND c.blind = true
+			  AND p.deleted = false
+			ORDER BY c.createdAt DESC
+			""")
+	List<Comment> findBlindCommentsByChannelSlug(@Param("channelSlug") String channelSlug);
 }

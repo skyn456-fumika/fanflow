@@ -7,7 +7,9 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fanflow.domain.channel.Channel;
 import com.fanflow.domain.channelmember.ChannelMemberService;
+import com.fanflow.domain.comment.dto.BlindCommentResponse;
 import com.fanflow.domain.comment.dto.CommentCreateRequest;
 import com.fanflow.domain.comment.dto.CommentResponse;
 import com.fanflow.domain.comment.dto.CommentUpdateRequest;
@@ -208,5 +210,13 @@ public class CommentService {
 		comment.unblind();
 
 		return CommentResponse.from(comment, false, true);
+	}
+
+	public List<BlindCommentResponse> getBlindCommentsByModerator(String channelSlug, Long userId) {
+		Channel channel = channelMemberService.getActiveChannel(channelSlug);
+
+		channelMemberService.validateModerator(channel.getChannelId(), userId);
+
+		return commentRepository.findBlindCommentsByChannelSlug(channelSlug).stream().map(BlindCommentResponse::from).toList();
 	}
 }
